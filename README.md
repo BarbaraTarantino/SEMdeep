@@ -16,6 +16,9 @@ Structural Equation Modeling with Deep Neural Network and Machine Learning
   Gradient (or Connection) weight approach and significance tests of
   network inputs.
 
+![SEMdeep-5.pdf](https://github.com/user-attachments/files/16549103/SEMdeep-5.pdf)
+
+
 ## Installation
 
 The latest stable version can be installed from CRAN:
@@ -30,4 +33,8 @@ The latest development version can be installed from GitHub:
 # install.packages("devtools")
 devtools::install_github("BarbaraTarantino/SEMdeep")
 ```
+
+## Getting help
+
+The full list of **SEMdeep** functions with examples is available at our website [**HERE**](https://barbaratarantino.github.io/SEMdeep/).
 
