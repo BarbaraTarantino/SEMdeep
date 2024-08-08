@@ -1,0 +1,23 @@
+Package: SEMdeep
+Title: Structural Equation Modeling with Deep Neural Network and
+        Machine Learning
+Version: 0.1.0
+Date: 2024-07-08
+Authors@R: c(
+  person("Mario", "Grassi", role = "aut", email="mario.grassi@unipv.it"),
+  person("Barbara", "Tarantino", role = c("aut","cre"), email="barbara.tarantino01@universitadipavia.it"))
+Maintainer: Barbara Tarantino <barbara.tarantino01@universitadipavia.it>
+Description: Trainig and validation of a custom (or data-driven) structural equation
+    model (SEM) using layer-wise deep neural networks (DNNs) or node-wise machine
+	learning (ML) algorithms.
+Depends: SEMgraph (>= 1.2.2), igraph (>= 2.0.0), R (>= 4.0)
+Imports: cito, corpcor, lavaan, mgcv, NeuralNetTools, nnet, ranger,
+        shapr, torch, xgboost
+License: GPL-3
+Encoding: UTF-8
+RoxygenNote: 7.3.1
+NeedsCompilation: no
+Repository: CRAN
+Author: Mario Grassi [aut],
+  Barbara Tarantino [aut, cre]
+Packaged: 2024-08-07 16:23:23 UTC; Mario Grassi
