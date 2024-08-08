@@ -31,6 +31,3 @@ The latest development version can be installed from GitHub:
 devtools::install_github("BarbaraTarantino/SEMdeep")
 ```
 
-## Getting help
-
-The full list of **SEMdeep** functions with examples is available at our website [**HERE**](https://BarbaraTarantino.github.io/SEMdeep/).
