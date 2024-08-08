@@ -594,8 +594,8 @@ predict.ML <- function(object, newdata, verbose=FALSE, ...)
 #' table(E(res$dag)$color)
 #'
 #' # average shapley R2 across response variables
-#' R2<- abs(res4$est[,4])
-#' Y<- res4$est[,1]
+#' R2<- abs(res$est[,4])
+#' Y<- res$est[,1]
 #' R2Y<- aggregate(R2~Y,data=data.frame(R2,Y),FUN="mean")
 #' PE<- predict(rf0, data[-train, ])$PE
 #' cbind(R2Y=R2Y[,2],PEY=PE[-1])
