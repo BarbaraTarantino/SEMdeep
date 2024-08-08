@@ -21,3 +21,5 @@ Repository: CRAN
 Author: Mario Grassi [aut],
   Barbara Tarantino [aut, cre]
 Packaged: 2024-08-07 16:23:23 UTC; Mario Grassi
+URL: https://github.com/BarbaraTarantino/SEMdeep
+BugReports: https://github.com/BarbaraTarantino/SEMdeep/issues
