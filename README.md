@@ -18,7 +18,7 @@ Structural Equation Modeling with Deep Neural Network and Machine Learning
 
 
 <p align="center">
-  <img src="https://github.com/BarbaraTarantino/SEMdeep/blob/master/docs/figures/SEMdeep_workflow.png" width=90% height=90%>
+  <img src="https://github.com/BarbaraTarantino/SEMdeep/blob/master/docs/figures/SEMdeep_workflow.png" width=100% height=100%>
 </p>
 
 
