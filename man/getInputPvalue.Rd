@@ -46,6 +46,8 @@ critical values, which represent the importance of the input variables.
 \examples{
 
 \donttest{
+if (torch::torch_is_installed()){
+
 # load ALS data
 ig<- alsData$graph
 data<- alsData$exprs
@@ -59,6 +61,7 @@ dnn0 <- SEMdnn(ig, data, train=1:nrow(data), cowt = FALSE,
 
 res<- getInputPvalue(dnn0, thr=NULL, verbose=TRUE)
 table(E(res$dag)$color)
+}
 }
 
 }

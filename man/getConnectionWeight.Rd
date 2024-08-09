@@ -51,6 +51,8 @@ and the binary (1,0) adjacency matrix, A(pxp) of the input DAG.
 \examples{
 
 \donttest{
+if (torch::torch_is_installed()){
+
 # load ALS data
 ig<- alsData$graph
 data<- alsData$exprs
@@ -64,6 +66,7 @@ dnn0 <- SEMdnn(ig, data, train=1:nrow(data), cowt = FALSE,
 
 res<- getConnectionWeight(dnn0, thr=NULL, verbose=TRUE)
 table(E(res$dag)$color)
+}
 }
 
 }

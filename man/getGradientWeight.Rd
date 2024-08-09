@@ -49,6 +49,8 @@ observation.
 \examples{
 
 \donttest{
+if (torch::torch_is_installed()){
+
 # load ALS data
 ig<- alsData$graph
 data<- alsData$exprs
@@ -62,6 +64,7 @@ dnn0 <- SEMdnn(ig, data, train=1:nrow(data), cowt = FALSE,
 
 res<- getGradientWeight(dnn0, thr=NULL, verbose=TRUE)
 table(E(res$dag)$color)
+}
 }
 
 }

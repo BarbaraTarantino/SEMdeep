@@ -37,6 +37,22 @@ The latest development version can be installed from GitHub:
 devtools::install_github("BarbaraTarantino/SEMdeep")
 ```
 
+**SEMdeep** uses the deep learning framework 'torch'. The **torch**  package
+is native to R, so it's computationally efficient, as there is no need to install
+Python or any other API. In order to install **torch** please follow these steps:
+
+``` r
+install.packages("torch")
+
+library(torch)
+
+install_torch(reinstall = TRUE)
+```
+
+If you have problems installing **torch** package, check out the
+[installation](https://torch.mlverse.org/docs/articles/installation.html/)
+help from the torch developer.
+
 ## Getting help
 
 The full list of **SEMdeep** functions with examples is available at our website [**HERE**](https://barbaratarantino.github.io/SEMdeep/).

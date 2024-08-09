@@ -121,10 +121,21 @@ of the input graph to fit a series of Deep Neural Networks (DNN)
 models, where the nodes in one layer act as response variables (output) 
 y and the nodes in the sucessive layers act as predictors (input) x. 
 Each fit uses the \code{\link[cito]{dnn}} function of the \pkg{cito} R
-package, based on the deep learning framework 'torch'. The \pkg{torch}
-package is native to R, so it's computationally efficient and the
-installation is very simple, as there is no need to install Python
-or any other API.
+package, based on the deep learning framework 'torch'.
+
+The \pkg{torch} package is native to R, so it's computationally efficient
+and the installation is very simple, as there is no need to install Python
+or any other API. In order to install \pkg{torch} please follow these steps:
+
+\code{install.packages("torch")}
+
+\code{library(torch)}
+
+\code{install_torch(reinstall = TRUE)}
+
+If you have problems installing \pkg{torch} package, check out the
+\href{https://torch.mlverse.org/docs/articles/installation.html/}{installation}
+help from the torch developer.
 }
 \details{
 By mapping data onto the input graph, \code{SEMdnn()} creates a set 
@@ -141,14 +152,9 @@ for the neurons in the layer below it, until the output layer is reached.
 }
 \examples{
 
-# Before running the first time the torch backend needs to be installed
-torch::install_torch()
-# Check whether a compatible GPU is available for computation.
-torch::cuda_is_available()
-#In Windows, if C Visul Studio in not installed:
-#download and install VC_redist.x64.exe file 
-
 \donttest{
+if (torch::torch_is_installed()){
+
 # load ALS data
 ig<- alsData$graph
 data<- alsData$exprs
@@ -225,6 +231,7 @@ mean(dnn2$fit$Psi)
 dnn2$fit$parameterEstimates
 gplot(dnn2$graph)
 table(E(dnn2$graph)$color)
+}
 }
 
 }

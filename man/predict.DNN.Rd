@@ -32,6 +32,8 @@ Predict method for DNN objects.
 \examples{
 
 \donttest{
+if (torch::torch_is_installed()){
+
 # Load Amyotrophic Lateral Sclerosis (ALS)
 data<- alsData$exprs; dim(data)
 data<- transformData(data)$data
@@ -75,6 +77,7 @@ mse1 <- predict(dnn1, data1[-train, ])
 yobs <- group[-train]
 yhat <- mse1$Yhat[ ,"outcome"]
 performance(yobs, yhat, thr=0, F1=FALSE)
+}
 }
 
 }

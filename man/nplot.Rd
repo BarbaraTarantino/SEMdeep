@@ -32,6 +32,8 @@ if W < 0, the connection is inhibited and it is highlighted in blue.
 \examples{
 
 \donttest{
+if (torch::torch_is_installed()){
+
 # load ALS data
 ig<- alsData$graph
 data<- alsData$exprs
@@ -47,6 +49,7 @@ dnn0 <- SEMdnn(ig, data, train=1:nrow(data), grad = FALSE,
    nplot(dnn0$model[[j]])
    Sys.sleep(5)
  }
+}
 }
 
 }
