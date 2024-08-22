@@ -655,11 +655,13 @@ buildLevels <- function(dag, ...)
 #' ypred<- ifelse(yhat < 0, 0, 1)
 #' performance(CT=table(yobs, ypred), F1=TRUE)
 #' 
+#' \donttest{
 #' #...with density plots of yhat per group
 #' old.par <- par(no.readonly = TRUE)
 #' performance(yobs, yhat, thr=0, F1=FALSE, verbose = TRUE)
 #' par(old.par)
-#'
+#' }
+#' 
 #' @export
 #'
 
