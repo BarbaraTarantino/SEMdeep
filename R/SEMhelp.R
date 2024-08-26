@@ -104,6 +104,7 @@
 #' res1<- predict(sem1, newdata=cbind(group,data)[-train,]) 
 #' print(res1$PE)
 #'
+#' \donttest{
 #' #...with a binary outcome (1=case, 0=control)
 #' 
 #' ig1<- mapGraph(ig, type="outcome"); gplot(ig1)
@@ -115,7 +116,7 @@
 #' 
 #' yobs<- group[-train]
 #' yhat<- res10$Yhat[,"outcome"]
-#' performance(yobs, yhat)
+#' benchmark(yobs, yhat)
 #'
 #' #...with predictors, source nodes; outcomes, sink nodes
 #' ig2<- mapGraph(ig, type= "source"); gplot(ig2)
@@ -124,7 +125,6 @@
 #' res02<- predict(sem02, newdata=data[-train,], verbose=TRUE) 
 #' #print(res02$PE)
 #'
-#' \donttest{
 #' #...with 10-iterations of 10-fold cross-validation samples
 #'
 #' res<- NULL
@@ -139,7 +139,7 @@
 #' 	 res<- rbind(res, resr$PE)
 #' 	}
 #' }
-#' #res
+#' #average results
 #' apply(res, 2, mean)
 #' }
 #'
@@ -150,141 +150,141 @@
 
 predict.SEM <- function(object, newdata, verbose = FALSE, ...)
 {
-  # set data, graph, predictors and outcomes
-  stopifnot(inherits(object$fit, c("lavaan", "RICF", "GGM")))
-  #stop("ERROR: in SEMrun( ) the fit=2 argument does not run (for now)")
-  graph<- object$graph
-  data <- object$data
-  vnames <- colnames(data)
-  if (!is.na(data[1, 1])) {
-    graph <- mapGraph(graph, type = "group")
-  }else{
-    data <- data[,-1]
-    vnames	<- vnames[-1]
-  }
-  train <- data[,vnames]
-  test <- newdata[,vnames]
-  data <- rbind(train, test) #dim(data); head(data)
-  vnodes <- colnames(data)[colnames(data) %in% V(graph)$name]
-  graph<- induced_subgraph(graph, vids = vnodes)
-  graph<- graph2dag(graph, data[train,])
-  din<- igraph::degree(graph, mode = "in")
-  dout<- igraph::degree(graph, mode = "out")
-  V(graph)$color[din == 0]<- "cyan"
-    V(graph)$color[dout == 0]<- "orange"
-      L<- buildLevels(graph)
-      if (verbose) gplot(graph)
-      
-      # SEM fitting on train data and predition on test data
-      K_fold<- 1
-      idx<- list(1:nrow(train))
-      yobs<- NULL
-      yhat<- NULL
-      
-      for (k in 1:K_fold) { #k=1
-        if (K_fold != 1) {
-          message("Fold: ", k) 
-          fit<- quiet(SEMrun(graph, data[idx[[k]],], algo="ricf", n_rep=0))
-        }else{
-          fit<- object
-        }
-        if (inherits(fit$fit, "lavaan")) {
-          #Sigma<- lavaan::fitted(fit$fit)$cov
-          Sigma<- lavaan::lavInspect(fit$fit, "sigma")
-          colnames(Sigma)<- gsub("z", "", colnames(Sigma))
-          rownames(Sigma)<- colnames(Sigma)
-          #mu<- fitted(fit$fit)$mean
-        }else{
-          Sigma<- fit$fit$Sigma
-          #mu<- rep(0, p)
-        }
-        Zk<- data[idx[[k]],]
-        mk<- apply(Zk, 2, mean)
-        sk<- apply(Zk, 2, sd)
-        yobsk<- NULL
-        yhatk<- NULL
-        
-        for (l in 1:(length(L)-1)) {
-          yn<- L[[l]]
-          xn<- unlist(L[(l+1):length(L)])
-          Sxx<- Sigma[xn, xn]
-          Sxy<- Sigma[xn, yn]
-          mx<- rep(0, length(xn))
-          my<- rep(0, length(yn))
-          xtest<- as.matrix(data[-idx[[k]], xn])
-          xtest<- scale(xtest, center=mk[xn], scale=sk[xn])
-          #xtest<- scale(xtest, center = mx, scale = TRUE)
-          n<- nrow(xtest)
-          py<- length(yn)
-          My<- matrix(my, n, py, byrow = TRUE)
-          if (corpcor::is.positive.definite(Sxx)) {
-            yhatlk<- My + xtest %*% solve(Sxx) %*% Sxy 
-          }else{
-            yhatlk<- My + xtest %*% Sxy
-          }
-          yobslk<- data[-idx[[k]], yn]
-          yobslk<- scale(yobslk, center=mk[yn], scale=sk[yn])
-          #yobslk<- scale(data[-idx[[k]], yn]) #dim(yhatlk)
-          colnames(yobslk)<- colnames(yhatlk)<- yn
-          yobsk<- cbind(yobsk, yobslk)
-          yhatk<- cbind(yhatk, yhatlk)
-        }
-        
-        yobs<- rbind(yobs, yobsk)
-        yhat<- rbind(yhat, yhatk)
-      }
-      
-      PE<- colMeans((yobs - yhat)^2)
-      pe<- mean((yobs - yhat)^2)
-      if (verbose) print(c(amse=pe,PE))
-      
-      return(list(PE=c(amse=pe,PE), Yhat=yhat))
+	# set data, graph, predictors and outcomes
+	stopifnot(inherits(object$fit, c("lavaan", "RICF", "GGM")))
+	#stop("ERROR: in SEMrun( ) the fit=2 argument does not run (for now)")
+	graph<- object$graph
+	data <- object$data
+	vnames <- colnames(data)
+    if (!is.na(data[1, 1])) {
+	 graph <- mapGraph(graph, type = "group")
+	}else{
+	 data <- data[,-1]
+	 vnames	<- vnames[-1]
+    }
+	train <- data[,vnames]
+	test <- newdata[,vnames]
+	data <- rbind(train, test)
+	vnodes <- colnames(data)[colnames(data) %in% V(graph)$name]
+	graph<- induced_subgraph(graph, vids = vnodes)
+	graph<- graph2dag(graph, data[train,])
+	din<- igraph::degree(graph, mode = "in")
+	dout<- igraph::degree(graph, mode = "out")
+	V(graph)$color[din == 0]<- "cyan"
+	V(graph)$color[dout == 0]<- "orange"
+	L<- buildLevels(graph)
+	if (verbose) gplot(graph)
+
+	# SEM fitting on train data and predition on test data
+	K_fold<- 1
+	idx<- list(1:nrow(train))
+	yobs<- NULL
+	yhat<- NULL
+	
+	for (k in 1:K_fold) { #k=1
+	  if (K_fold != 1) {
+		message("Fold: ", k) 
+		fit<- quiet(SEMrun(graph, data[idx[[k]],], algo="ricf", n_rep=0))
+	  }else{
+		fit<- object
+	  }
+	  if (inherits(fit$fit, "lavaan")) {
+		#Sigma<- lavaan::fitted(fit$fit)$cov
+		Sigma<- lavaan::lavInspect(fit$fit, "sigma")
+		colnames(Sigma)<- gsub("z", "", colnames(Sigma))
+		rownames(Sigma)<- colnames(Sigma)
+		#mu<- fitted(fit$fit)$mean
+	  }else{
+		Sigma<- fit$fit$Sigma
+		#mu<- rep(0, p)
+	  }
+	  Zk<- data[idx[[k]],]
+	  mk<- apply(Zk, 2, mean)
+	  sk<- apply(Zk, 2, sd)
+	  yobsk<- NULL
+	  yhatk<- NULL
+		 
+	  for (l in 1:(length(L)-1)) {
+		yn<- L[[l]]
+		xn<- unlist(L[(l+1):length(L)])
+		Sxx<- Sigma[xn, xn]
+		Sxy<- Sigma[xn, yn]
+		mx<- rep(0, length(xn))
+		my<- rep(0, length(yn))
+		xtest<- as.matrix(data[-idx[[k]], xn])
+		xtest<- scale(xtest, center=mk[xn], scale=sk[xn])
+		#xtest<- scale(xtest, center = mx, scale = TRUE)
+		n<- nrow(xtest)
+		py<- length(yn)
+		My<- matrix(my, n, py, byrow = TRUE)
+		if (corpcor::is.positive.definite(Sxx)) {
+			yhatlk<- My + xtest %*% solve(Sxx) %*% Sxy 
+		}else{
+			yhatlk<- My + xtest %*% Sxy
+		}
+		yobslk<- data[-idx[[k]], yn]
+		yobslk<- scale(yobslk, center=mk[yn], scale=sk[yn])
+		#yobslk<- scale(data[-idx[[k]], yn]) #dim(yhatlk)
+		colnames(yobslk)<- colnames(yhatlk)<- yn
+		yobsk<- cbind(yobsk, yobslk)
+		yhatk<- cbind(yhatk, yhatlk)
+	  }
+	  
+	  yobs<- rbind(yobs, yobsk)
+	  yhat<- rbind(yhat, yhatk)
+	}
+
+	PE<- colMeans((yobs - yhat)^2)
+	pe<- mean((yobs - yhat)^2)
+	if (verbose) print(c(amse=pe,PE))
+
+	return(list(PE=c(amse=pe,PE), Yhat=yhat))
 }
 
 createFolds <- function (y, k = 10, list = TRUE, returnTrain = TRUE, ...) 
 {
-  #createFolds() function from "caret" package (author: Max Kuhn)
-  #All rights reserved. See the file COPYING for license terms.
-  
-  if (is.numeric(y)) {
-    cuts <- floor(length(y)/k)
-    if (cuts < 2) 
-      cuts <- 2
-    if (cuts > 5) 
-      cuts <- 5
-    breaks <- unique(quantile(y, probs = seq(0, 1, length = cuts)))
-    y <- cut(y, breaks, include.lowest = TRUE)
-  }
-  if (k < length(y)) {
-    y <- factor(as.character(y))
-    numInClass <- table(y)
-    foldVector <- vector(mode = "integer", length(y))
-    for (i in 1:length(numInClass)) { #i=1
-      min_reps <- numInClass[i]%/%k
-      if (min_reps > 0) {
-        spares <- numInClass[i]%%k
-        seqVector <- rep(1:k, min_reps)
-        if (spares > 0) 
-          seqVector <- c(seqVector, sample(1:k, spares))
-        foldVector[which(y == names(numInClass)[i])] <- sample(seqVector)
-      }
-      else {
-        foldVector[which(y == names(numInClass)[i])] <- sample(1:k, 
-                                                               size = numInClass[i])
-      }
+    #createFolds() function from "caret" package (author: Max Kuhn)
+	#All rights reserved. See the file COPYING for license terms.
+
+	if (is.numeric(y)) {
+        cuts <- floor(length(y)/k)
+        if (cuts < 2) 
+            cuts <- 2
+        if (cuts > 5) 
+            cuts <- 5
+        breaks <- unique(quantile(y, probs = seq(0, 1, length = cuts)))
+        y <- cut(y, breaks, include.lowest = TRUE)
     }
-  }
-  else foldVector <- seq(along = y)
-  if (list) {
-    out <- split(seq(along = y), foldVector)
-    names(out) <- paste("Fold", gsub(" ", "0", format(seq(along = out))), 
-                        sep = "")
-    if (returnTrain) 
-      out <- lapply(out, function(data, y) y[-data], y = seq(along = y))
-  }
-  else out <- foldVector
-  
-  return(out)
+    if (k < length(y)) {
+        y <- factor(as.character(y))
+        numInClass <- table(y)
+        foldVector <- vector(mode = "integer", length(y))
+        for (i in 1:length(numInClass)) { #i=1
+            min_reps <- numInClass[i]%/%k
+            if (min_reps > 0) {
+                spares <- numInClass[i]%%k
+                seqVector <- rep(1:k, min_reps)
+                if (spares > 0) 
+                  seqVector <- c(seqVector, sample(1:k, spares))
+                foldVector[which(y == names(numInClass)[i])] <- sample(seqVector)
+            }
+            else {
+                foldVector[which(y == names(numInClass)[i])] <- sample(1:k, 
+                  size = numInClass[i])
+            }
+        }
+    }
+    else foldVector <- seq(along = y)
+    if (list) {
+        out <- split(seq(along = y), foldVector)
+        names(out) <- paste("Fold", gsub(" ", "0", format(seq(along = out))), 
+            sep = "")
+        if (returnTrain) 
+            out <- lapply(out, function(data, y) y[-data], y = seq(along = y))
+    }
+    else out <- foldVector
+	
+    return(out)
 }
 
 #' @title Create a plot for a neural network model
@@ -341,20 +341,20 @@ createFolds <- function (y, k = 10, list = TRUE, returnTrain = TRUE, ...)
 
 nplot<- function(dnn.fit, bias=FALSE, ...)
 {
-  W<- coef(dnn.fit)[[1]] #str(W)
-  w0<- list()
-  for (i in seq(2, length(W), by=2)){
-    wi<- cbind(W[[i]],W[[i-1]])
-    w0<- c(w0, list(t(wi)))
-  } #w0
-  w1<- unlist(w0) #w1
-  input<- dnn.fit$ model_properties$input
-  hidden<- dnn.fit$ model_properties$hidden
-  output<- dnn.fit$ model_properties$output
-  struct1<- c(input, hidden, output)
-  g<- NeuralNetTools::plotnet(w1, struct1, pos_col="red", neg_col="blue", bias=bias)
-  
-  return(invisible(g))
+	W<- coef(dnn.fit)[[1]] #str(W)
+	w0<- list()
+	for (i in seq(2, length(W), by=2)){
+	  wi<- cbind(W[[i]],W[[i-1]])
+	  w0<- c(w0, list(t(wi)))
+	} #w0
+	w1<- unlist(w0) #w1
+	input<- dnn.fit$ model_properties$input
+	hidden<- dnn.fit$ model_properties$hidden
+	output<- dnn.fit$ model_properties$output
+	struct1<- c(input, hidden, output)
+	g<- NeuralNetTools::plotnet(w1, struct1, pos_col="red", neg_col="blue", bias=bias)
+	
+	return(invisible(g))
 }
 
 #' @title Map additional variables (nodes) to a graph object
@@ -419,159 +419,159 @@ nplot<- function(dnn.fit, bias=FALSE, ...)
 
 mapGraph <- function(graph, type = "outcome", LV = NULL, f = NULL, ...)
 {
-  if (!is.null(f)) {
-    g <- map_formula(f)
-    return(invisible(g))
-  }
-  if (type == "source") g <- map_source(graph)
-  if (type == "group") g <- map_group(graph)
-  if (type == "outcome") g <- map_outcome(graph)
-  if (type == "LV") g <- map_LV(graph, LV=LV, cg=NULL)
-  if (type == "clusterLV"){
-    cg<- SEMgraph::clusterGraph(graph, size=0)
-    LV<- length(table(cg))
-    g<- map_LV(graph, LV=LV, cg=cg)
-  }
-  return(invisible(g))
+	if (!is.null(f)) {
+	  g <- map_formula(f)
+	  return(invisible(g))
+	}
+	if (type == "source") g <- map_source(graph)
+	if (type == "group") g <- map_group(graph)
+	if (type == "outcome") g <- map_outcome(graph)
+	if (type == "LV") g <- map_LV(graph, LV=LV, cg=NULL)
+	if (type == "clusterLV"){
+	  cg<- SEMgraph::clusterGraph(graph, size=0)
+	  LV<- length(table(cg))
+	  g<- map_LV(graph, LV=LV, cg=cg)
+	}
+	return(invisible(g))
 }
 
 map_formula <- function(f, verbose=FALSE, ...)
 {
-  vf <- all.vars(f)
-  y <- vf[1]
-  xn <- vf[-1]
-  gout <- make_empty_graph(length(vf))
-  V(gout)$name <- c(vf)
-  E <- NULL
-  for(k in 1:length(xn)){
-    E <- c(E, xn[k], y)
-  }
-  gout <- gout + igraph::edges(E)
-  
-  if (verbose) gplot(gout)
-  
-  return(gout) 
+	vf <- all.vars(f)
+	y <- vf[1]
+	xn <- vf[-1]
+	gout <- make_empty_graph(length(vf))
+	V(gout)$name <- c(vf)
+	E <- NULL
+	for(k in 1:length(xn)){
+	 E <- c(E, xn[k], y)
+	}
+	gout <- gout + igraph::edges(E)
+	
+	if (verbose) gplot(gout)
+	
+	return(gout) 
 }
 
 map_source <- function(graph, verbose=FALSE, ...)
 {
-  din <- igraph::degree(graph, mode= "in")
-  dout <- igraph::degree(graph, mode = "out")
-  xn <- V(graph)$name[din == 0]
-  yn <- V(graph)$name[dout == 0]
-  gout <- make_empty_graph(length(c(xn,yn)))
-  V(gout)$name <- c(xn,yn)
-  E <- NULL
-  for(k in 1:length(xn)){
-    for(j in 1:length(yn)){
-      E <- c(E, xn[k], yn[j])
-    }
-  }
-  gout <- gout + igraph::edges(E)  
-  if (verbose) gplot(gout)
-  
-  return(gout)	
+	din <- igraph::degree(graph, mode= "in")
+	dout <- igraph::degree(graph, mode = "out")
+	xn <- V(graph)$name[din == 0]
+	yn <- V(graph)$name[dout == 0]
+	gout <- make_empty_graph(length(c(xn,yn)))
+	V(gout)$name <- c(xn,yn)
+	E <- NULL
+	 for(k in 1:length(xn)){
+	  for(j in 1:length(yn)){
+		E <- c(E, xn[k], yn[j])
+	  }
+	 }
+	gout <- gout + igraph::edges(E)  
+	if (verbose) gplot(gout)
+	
+	return(gout)	
 }
 
 map_group <- function(graph, verbose=FALSE, ...)
 {
-  gout <- graph + igraph::vertices("group")
-  nodes<- V(graph)$name
-  E <- NULL
-  for(v in 1:length(nodes)){
-    E <- c(E, "group", nodes[v])
-  }
-  gout <- gout + igraph::edges(E)
-  V(gout)$color[V(gout)$name == "group"] <- "green"
-    if (verbose) gplot(gout)
-  
-  return(gout)	
+	gout <- graph + igraph::vertices("group")
+	nodes<- V(graph)$name
+	E <- NULL
+	 for(v in 1:length(nodes)){
+	  	E <- c(E, "group", nodes[v])
+	  }
+	gout <- gout + igraph::edges(E)
+	V(gout)$color[V(gout)$name == "group"] <- "green"
+	if (verbose) gplot(gout)
+	
+	return(gout)	
 }
 
 map_outcome <- function(graph, verbose=FALSE, ...)
 {
-  gout <- graph + igraph::vertices("outcome")
-  dout<- igraph::degree(graph, mode = "out")
-  leaf<- V(graph)$name[dout == 0]
-  E <- NULL
-  for(v in 1:length(leaf)){
-    E <- c(E, leaf[v], "outcome")
-  }
-  gout <- gout + igraph::edges(E)
-  V(gout)$color[V(gout)$name == "outcome"] <- "green"
-    if (verbose) gplot(gout)
-  
-  return(gout)	
+	gout <- graph + igraph::vertices("outcome")
+	dout<- igraph::degree(graph, mode = "out")
+	leaf<- V(graph)$name[dout == 0]
+	E <- NULL
+	 for(v in 1:length(leaf)){
+	  	E <- c(E, leaf[v], "outcome")
+	  }
+	gout <- gout + igraph::edges(E)
+	V(gout)$color[V(gout)$name == "outcome"] <- "green"
+	if (verbose) gplot(gout)
+	
+	return(gout)	
 }
 
 map_LV <- function(graph, LV, cg=NULL, verbose=FALSE, ...)
 {
-  VH <- paste0("LV", 1:LV)
-  gH <- graph + igraph::vertices(VH)
-  E <- NULL
-  if (is.null(cg)) {
-    for(v in 1:length(VH)){
-      for(i in 1:vcount(graph)){ #i=1
-        E <- c(E, VH[v], V(graph)$name[i])
-      }
-    }
-  }
-  if (!is.null(cg)) {
-    VH <- paste0("LV", cg)
-    for(i in 1:vcount(graph)){ #i=1
-      E <- c(E, VH[i], names(cg[i]))
-    }
-  }
-  gH <- gH + igraph::edges(E)
-  V(gH)$color[V(gH)$name %in% VH] <- "green"
-    if (verbose) gplot(gH, l="fdp")
-  
-  return(gH)	
+	VH <- paste0("LV", 1:LV)
+	gH <- graph + igraph::vertices(VH)
+	E <- NULL
+	if (is.null(cg)) {
+	 for(v in 1:length(VH)){
+	   for(i in 1:vcount(graph)){ #i=1
+		 E <- c(E, VH[v], V(graph)$name[i])
+	   }
+	 }
+	}
+	if (!is.null(cg)) {
+	 VH <- paste0("LV", cg)
+	 for(i in 1:vcount(graph)){ #i=1
+	   E <- c(E, VH[i], names(cg[i]))
+	 }
+	}
+	gH <- gH + igraph::edges(E)
+	V(gH)$color[V(gH)$name %in% VH] <- "green"
+	if (verbose) gplot(gH, l="fdp")
+	
+	return(gH)	
 }
 
 buildLevels <- function(dag, ...)
 {
-  Leaf_removal <- function(dag)
-  {
-    levels <- list()
-    level <- 1
-    repeat {
-      leaves <- igraph::degree(dag, mode= "out")
-      levels[[level]]<- names(leaves)[leaves == 0]
-      dag <- delete_vertices(dag, names(leaves)[leaves == 0])
-      level <- level+1
-      if (vcount(dag)==0 | ecount(dag)==0) break
-    }
-    levels[[level]] <- V(dag)$name
-    names(levels)<- 1:level
-    return(levels)
-  }
-  
-  # leaf-removal(dag)
-  l1<- Leaf_removal(dag)
-  if (length(l1) == 2) return(l1)
-  # leaf removal(dagT)
-  adj <- as_adj(dag, sparse=FALSE)
-  dagT <- graph_from_adjacency_matrix(t(adj), mode="directed")
-  l2 <- Leaf_removal(dagT)
-  l2 <- rev(l2)
-  # number-of-layers 
-  L <- max(length(l1), length(l2))
-  
-  # combine BU-ordering (dag+dagT)
-  l3 <- list()
-  l3[[1]] <- l1[[1]] #sink
-  l3[[L]] <- l2[[L]] #source
-  for (k in 2:(L-1)){
-    lk <- unique(c(l1[[k]], l2[[k]]))
-    Lk <- unlist(l3[c(1:(k-1),L)])
-    l3[[k]] <- setdiff(lk, Lk)
-  }
-  
-  return(l3)
+	Leaf_removal <- function(dag)
+	{
+	 levels <- list()
+	 level <- 1
+	 repeat {
+	  leaves <- igraph::degree(dag, mode= "out")
+	  levels[[level]]<- names(leaves)[leaves == 0]
+  	  dag <- delete_vertices(dag, names(leaves)[leaves == 0])
+	  level <- level+1
+	  if (vcount(dag)==0 | ecount(dag)==0) break
+	 }
+	 levels[[level]] <- V(dag)$name
+	 names(levels)<- 1:level
+	 return(levels)
+	}
+
+	# leaf-removal(dag)
+	l1<- Leaf_removal(dag)
+	if (length(l1) == 2) return(l1)
+	# leaf removal(dagT)
+	adj <- as_adj(dag, sparse=FALSE)
+	dagT <- graph_from_adjacency_matrix(t(adj), mode="directed")
+	l2 <- Leaf_removal(dagT)
+	l2 <- rev(l2)
+	# number-of-layers 
+	L <- max(length(l1), length(l2))
+
+	# combine BU-ordering (dag+dagT)
+	l3 <- list()
+	l3[[1]] <- l1[[1]] #sink
+	l3[[L]] <- l2[[L]] #source
+	for (k in 2:(L-1)){
+	 lk <- unique(c(l1[[k]], l2[[k]]))
+	 Lk <- unlist(l3[c(1:(k-1),L)])
+	 l3[[k]] <- setdiff(lk, Lk)
+	}
+
+	return(l3)
 }
 
-#' @title Prediction performance evaluation utility
+#' @title Prediction benchmark evaluation utility
 #'
 #' @description This function is able to calculate a series of binary 
 #' classification evaluation statistics given (i) two vectors: one with the 
@@ -624,6 +624,7 @@ buildLevels <- function(dag, ...)
 #' 
 #' @examples
 #'
+#' \donttest{
 #' # Load Amyotrophic Lateral Sclerosis (ALS)
 #' data<- alsData$exprs; dim(data)
 #' data<- transformData(data)$data
@@ -644,100 +645,100 @@ buildLevels <- function(dag, ...)
 #' yobs<- group[-train]
 #' yhat<- mse$Yhat[ ,"outcome"]
 #' #yprob<- exp(yhat)/(1+exp(yhat))
+#' #benchmark(yobs, yprob, thr=0.5)
+#'
+#' # ... evaluate predictive benchmark (sp, se, acc, mcc)
+#' benchmark(yobs, yhat, thr=0, F1=FALSE)
 #' 
-#' # ... evaluate predictive performance (sp, se, acc, mcc)
-#' performance(yobs, yhat, thr=0, F1=FALSE)
-#' 
-#' # ... evaluate predictive performance (pre, rec, f1, mcc)
-#' performance(yobs, yhat, thr=0, F1=TRUE)
+#' # ... evaluate predictive benchmark (pre, rec, f1, mcc)
+#' benchmark(yobs, yhat, thr=0, F1=TRUE)
 #' 
 #' #... with confusion matrix table as input
 #' ypred<- ifelse(yhat < 0, 0, 1)
-#' performance(CT=table(yobs, ypred), F1=TRUE)
+#' benchmark(CT=table(yobs, ypred), F1=TRUE)
 #' 
-#' \donttest{
 #' #...with density plots of yhat per group
 #' old.par <- par(no.readonly = TRUE)
-#' performance(yobs, yhat, thr=0, F1=FALSE, verbose = TRUE)
+#' benchmark(yobs, yhat, thr=0, F1=FALSE, verbose = TRUE)
 #' par(old.par)
 #' }
-#' 
+#'
 #' @export
 #'
 
-performance<- function(yobs, yhat, CT=NULL, thr=0, F1=TRUE, verbose=FALSE, ...)
+benchmark<- function(yobs, yhat, CT=NULL, thr=0, F1=TRUE, verbose=FALSE, ...)
 {  
-  # Confusion 2x2 table
-  if (inherits(CT, "table")){
-    CT<- CT
-  }else{
-    yobs<- factor(yobs, levels=c(0,1))
-    if (thr == 0){
-      thr<- (mean(yhat[yobs==0]) + mean(yhat[yobs==1]))/2
-      ypred<- ifelse(yhat < thr, 0, 1)
-      ypred<- factor(ypred, levels=c(0,1))
-    } else if (thr > 0){
-      wp1<- table(yobs)[2] / length(yobs)
-      yhat<- classadjust(yhat, wrongprob1=wp1, trueprob1=wp1)
-      ypred<- ifelse(yhat < 0.5, 0, 1)
-      ypred<- factor(ypred, levels=c(0,1))
-    }
-    CT<- table(yobs,ypred)
-  }
-  
-  print(CT)
-  cat("\n")
-  a<- as.numeric(CT[2,2]) #TP
-  b<- as.numeric(CT[2,1]) #FN
-  c<- as.numeric(CT[1,2]) #FP
-  d<- as.numeric(CT[1,1]) #TN
-  
-  sp<- d/(c+d) # Specificity, TN/(TN+FP)
-  se<- a/(a+b) # Sensitivity, TP/(TP+FN)
-  pre<- a/(a+c) # Precision, TP/(TP+FP)
-  rec<- a/(a+b) # Recall, TP/(TP+FN)
-  acc<- (a+d)/(a+b+c+d) # Accuracy, (TP+TN)/n
-  f1<- (2*rec*pre)/(rec+pre) # F1=harmonic accuracy
-  mcc<- (a*d - b*c)/sqrt((a+c)*(a+b)*(d+c)*(d+b)) # MCC
-  
-  if (verbose) dplot(yobs=yobs, yhat=yhat, thr=thr, fp=(1-sp), fn=(1-se))
-  if (F1 == TRUE) return(data.frame(pre, rec, f1, mcc))
-  if (F1 == FALSE) return(data.frame(sp, se, acc, mcc))
+	# Confusion 2x2 table
+	if (inherits(CT, "table")){
+	 CT<- CT
+	}else{
+	 yobs<- factor(yobs, levels=c(0,1))
+	if (thr == 0){
+		thr<- (mean(yhat[yobs==0]) + mean(yhat[yobs==1]))/2
+		ypred<- ifelse(yhat < thr, 0, 1)
+		ypred<- factor(ypred, levels=c(0,1))
+	} else if (thr > 0){
+		wp1<- table(yobs)[2] / length(yobs)
+		yhat<- classadjust(yhat, wrongprob1=wp1, trueprob1=wp1)
+		ypred<- ifelse(yhat < 0.5, 0, 1)
+		ypred<- factor(ypred, levels=c(0,1))
+	}
+	 CT<- table(yobs,ypred)
+	}
+	
+	print(CT)
+	cat("\n")
+	a<- as.numeric(CT[2,2]) #TP
+	b<- as.numeric(CT[2,1]) #FN
+	c<- as.numeric(CT[1,2]) #FP
+	d<- as.numeric(CT[1,1]) #TN
+	
+	sp<- d/(c+d) # Specificity, TN/(TN+FP)
+	se<- a/(a+b) # Sensitivity, TP/(TP+FN)
+	pre<- a/(a+c) # Precision, TP/(TP+FP)
+	rec<- a/(a+b) # Recall, TP/(TP+FN)
+	acc<- (a+d)/(a+b+c+d) # Accuracy, (TP+TN)/n
+	f1<- (2*rec*pre)/(rec+pre) # F1=harmonic accuracy
+	mcc<- (a*d - b*c)/sqrt((a+c)*(a+b)*(d+c)*(d+b)) # MCC
+	
+	if (verbose) dplot(yobs=yobs, yhat=yhat, thr=thr, fp=(1-sp), fn=(1-se))
+	if (F1 == TRUE) return(data.frame(pre, rec, f1, mcc))
+	if (F1 == FALSE) return(data.frame(sp, se, acc, mcc))
 }
 
 dplot<- function(yobs, yhat, thr, fp, fn, ...)
 { 
-  # density plot of yhat per yobs(0,1)
-  xlim <- c(min(yhat)-0.5, max(yhat)+0.5)
-  err <- c(paste0("FP = ",round(fp,3)),
-           paste0("FN = ",round(fn,3)))
-  par(mfrow=c(2,1), mar=rep(3,4))
-  for (c in 0:1) { 
-    d <- density(yhat[yobs == c])
-    x <- d$x
-    y <- d$y/max(d$y)
-    main <- paste0("group ", c, " (", err[c+1], ")")
-    plot(x, y, type="l", xlim=xlim, main=main)
-    polygon(x, y, col="gray", border="gray")
-    if (c == 0) {
-      region.x <- x[thr <= x & x <= xlim]
-      region.y <- y[thr <= x & x <= xlim]
-    }else{
-      region.x <- x[xlim <= x & x <= thr]
-      region.y <- y[xlim <= x & x <= thr]
-    }
-    region.x <- c(region.x[1], region.x, tail(region.x,1))
-    region.y <- c(0, region.y, 0)
-    polygon(region.x, region.y, density=-1, col="red") 
-  }
+	# density plot of yhat per yobs(0,1)
+	xlim <- c(min(yhat)-0.5, max(yhat)+0.5)
+	err <- c(paste0("FP = ",round(fp,3)),
+			 paste0("FN = ",round(fn,3)))
+	par(mfrow=c(2,1), mar=rep(3,4))
+	for (c in 0:1) { 
+		d <- density(yhat[yobs == c])
+		x <- d$x
+		y <- d$y/max(d$y)
+		main <- paste0("group ", c, " (", err[c+1], ")")
+		plot(x, y, type="l", xlim=xlim, main=main)
+		polygon(x, y, col="gray", border="gray")
+		if (c == 0) {
+		 region.x <- x[thr <= x & x <= xlim]
+		 region.y <- y[thr <= x & x <= xlim]
+		}else{
+		 region.x <- x[xlim <= x & x <= thr]
+		 region.y <- y[xlim <= x & x <= thr]
+		}
+		region.x <- c(region.x[1], region.x, tail(region.x,1))
+		region.y <- c(0, region.y, 0)
+		polygon(region.x, region.y, density=-1, col="red") 
+	}
 }
 
 classadjust <- function(condprobs, wrongprob1, trueprob1)
 {
-  wrongratio <- (1 - wrongprob1)/wrongprob1
-  fratios <- (1/condprobs - 1) * (1/wrongratio)
-  trueratios <- (1 - trueprob1)/trueprob1
-  return(1/(1 + trueratios * fratios))
+	wrongratio <- (1 - wrongprob1)/wrongprob1
+	fratios <- (1/condprobs - 1) * (1/wrongratio)
+	trueratios <- (1 - trueprob1)/trueprob1
+	return(1/(1 + trueratios * fratios))
 }
 
 quiet <- function(..., messages=FALSE, cat=FALSE){

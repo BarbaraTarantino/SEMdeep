@@ -125,7 +125,8 @@ package, based on the deep learning framework 'torch'.
 
 The \pkg{torch} package is native to R, so it's computationally efficient
 and the installation is very simple, as there is no need to install Python
-or any other API. In order to install \pkg{torch} please follow these steps:
+or any other API, and DNNs can be trained on CPU, GPU and MacOS GPUs.
+In order to install \pkg{torch} please follow these steps:
 
 \code{install.packages("torch")}
 
@@ -133,7 +134,7 @@ or any other API. In order to install \pkg{torch} please follow these steps:
 
 \code{install_torch(reinstall = TRUE)}
 
-If you have problems installing \pkg{torch} package, check out the
+For setup GPU or if you have problems installing \pkg{torch} package, check out the
 \href{https://torch.mlverse.org/docs/articles/installation.html/}{installation}
 help from the torch developer.
 }

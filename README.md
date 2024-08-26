@@ -33,8 +33,8 @@ install_torch(reinstall = TRUE)
 ```
 
 Only for windows (not Linux or Mac). Some Windows distributions don’t have the
-Visual C++ runtime pre-installed, download from [Microsoft]
-(https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
+Visual C++ runtime pre-installed, download from
+[Microsoft](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170/)
 **VC_redist.x86.exe** (R32) or **VC_redist.x86.exe** (R64) and install it.
 
 For GPU setup, or if you have problems installing **torch** package, check out the

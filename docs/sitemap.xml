@@ -1,54 +1,21 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>/404.html</loc>
-  </url>
-  <url>
-    <loc>/authors.html</loc>
-  </url>
-  <url>
-    <loc>/index.html</loc>
-  </url>
-  <url>
-    <loc>/news/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/SEMdnn.html</loc>
-  </url>
-  <url>
-    <loc>/reference/SEMml.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getConnectionWeight.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getGradientWeight.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getInputPvalue.html</loc>
-  </url>
-  <url>
-    <loc>/reference/getShapleyR2.html</loc>
-  </url>
-  <url>
-    <loc>/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/mapGraph.html</loc>
-  </url>
-  <url>
-    <loc>/reference/nplot.html</loc>
-  </url>
-  <url>
-    <loc>/reference/performance.html</loc>
-  </url>
-  <url>
-    <loc>/reference/predict.DNN.html</loc>
-  </url>
-  <url>
-    <loc>/reference/predict.ML.html</loc>
-  </url>
-  <url>
-    <loc>/reference/predict.SEM.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/news/index.html</loc></url>
+<url><loc>/reference/benchmark.html</loc></url>
+<url><loc>/reference/getConnectionWeight.html</loc></url>
+<url><loc>/reference/getGradientWeight.html</loc></url>
+<url><loc>/reference/getInputPvalue.html</loc></url>
+<url><loc>/reference/getShapleyR2.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/mapGraph.html</loc></url>
+<url><loc>/reference/nplot.html</loc></url>
+<url><loc>/reference/performance.html</loc></url>
+<url><loc>/reference/predict.DNN.html</loc></url>
+<url><loc>/reference/predict.ML.html</loc></url>
+<url><loc>/reference/predict.SEM.html</loc></url>
+<url><loc>/reference/SEMdnn.html</loc></url>
+<url><loc>/reference/SEMml.html</loc></url>
 </urlset>
+

@@ -171,8 +171,8 @@ table(E(res6$graph)$color)
 mse6 <- predict(res6, data1[-train, ])
 yobs <- group[-train]
 yhat <- mse6$Yhat[ ,"outcome"]
-performance(yobs, yhat, thr=0, F1=TRUE)
-performance(yobs, yhat, thr=0, F1=FALSE)
+benchmark(yobs, yhat, thr=0, F1=TRUE)
+benchmark(yobs, yhat, thr=0, F1=FALSE)
 }
 
 }

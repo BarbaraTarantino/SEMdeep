@@ -76,7 +76,7 @@ print(end-start)
 mse1 <- predict(dnn1, data1[-train, ])
 yobs <- group[-train]
 yhat <- mse1$Yhat[ ,"outcome"]
-performance(yobs, yhat, thr=0, F1=FALSE)
+benchmark(yobs, yhat, thr=0, F1=FALSE)
 }
 }
 

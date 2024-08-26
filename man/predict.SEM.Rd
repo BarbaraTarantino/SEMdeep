@@ -83,6 +83,7 @@ sem1<- SEMrun(ig, data[train,], group[train], SE="none", limit=1000)
 res1<- predict(sem1, newdata=cbind(group,data)[-train,]) 
 print(res1$PE)
 
+\donttest{
 #...with a binary outcome (1=case, 0=control)
 
 ig1<- mapGraph(ig, type="outcome"); gplot(ig1)
@@ -94,7 +95,7 @@ res10<- predict(sem10, newdata=data1[-train,], verbose=TRUE)
 
 yobs<- group[-train]
 yhat<- res10$Yhat[,"outcome"]
-performance(yobs, yhat)
+benchmark(yobs, yhat)
 
 #...with predictors, source nodes; outcomes, sink nodes
 ig2<- mapGraph(ig, type= "source"); gplot(ig2)
@@ -103,7 +104,6 @@ sem02 <- SEMrun(ig2, data[train,], SE="none", limit=1000)
 res02<- predict(sem02, newdata=data[-train,], verbose=TRUE) 
 #print(res02$PE)
 
-\donttest{
 #...with 10-iterations of 10-fold cross-validation samples
 
 res<- NULL
@@ -118,7 +118,7 @@ for (r in 1:10) {
 	 res<- rbind(res, resr$PE)
 	}
 }
-#res
+#average results
 apply(res, 2, mean)
 }
 

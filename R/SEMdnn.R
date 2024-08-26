@@ -30,7 +30,8 @@
 #'
 #' The \pkg{torch} package is native to R, so it's computationally efficient
 #' and the installation is very simple, as there is no need to install Python
-#' or any other API. In order to install \pkg{torch} please follow these steps:
+#' or any other API, and DNNs can be trained on CPU, GPU and MacOS GPUs.
+#' In order to install \pkg{torch} please follow these steps:
 #'
 #' \code{install.packages("torch")}
 #'
@@ -38,7 +39,7 @@
 #'
 #' \code{install_torch(reinstall = TRUE)}
 #'
-#' If you have problems installing \pkg{torch} package, check out the
+#' For setup GPU or if you have problems installing \pkg{torch} package, check out the
 #' \href{https://torch.mlverse.org/docs/articles/installation.html/}{installation}
 #' help from the torch developer.
 #'
@@ -228,141 +229,141 @@
 #'
 
 SEMdnn <- function(graph, data, train = NULL, cowt = FALSE, thr = NULL, 
-                   loss = "mse", hidden = c(10L, 10L, 10L), link = "relu", 
-                   validation = 0, bias = TRUE, lambda = 0, alpha = 0.5, dropout = 0,
-                   optimizer = "adam", lr = 0.01, epochs = 100, device = "cpu",
-                   early_stopping = FALSE, verbose = TRUE, ...)
+	loss = "mse", hidden = c(10L, 10L, 10L), link = "relu", 
+	validation = 0, bias = TRUE, lambda = 0, alpha = 0.5, dropout = 0,
+	optimizer = "adam", lr = 0.01, epochs = 100, device = "cpu",
+	early_stopping = FALSE, verbose = TRUE, ...)
 {
-  # Set graph and data objects :
-  nodes <- colnames(data)[colnames(data) %in% V(graph)$name]
-  graph <- induced_subgraph(graph, vids=which(V(graph)$name %in% nodes))
-  dag <- graph2dag(graph, data[train,], bap=FALSE) #del cycles & all <->
-  din <- igraph::degree(dag, mode= "in")
-  Vx <- V(dag)$name[din == 0]
-  Vy <- V(dag)$name[din != 0]
-  px <- length(Vx)
-  py <- length(Vy)
-  
-  X <- data[, V(dag)$name]
-  if (!is.null(train)) {
-    Z_train <- scale(X[train, ])
-    mp <- apply(Z_train, 2, mean)
-    sp <- apply(Z_train, 2, sd)
-    Z_test <- scale(X[-train, ], center=mp, scale=sp)
-  }else{
-    Z_train <- Z_test <- scale(X)
-  }
-  n <- nrow(Z_train)
-  
-  # Check whether a compatible GPU is available for computation.
-  #use_cuda <- torch::cuda_is_available()
-  #device <- ifelse(use_cuda, "cuda", "cpu")
-  res <- parameterEstimates.DNN(dag, Z_train, Z_test,
-                                loss, hidden, link, validation, bias, lambda,
-                                alpha, dropout, optimizer, lr, epochs, device,
-                                early_stopping, verbose)
-  #str(res, max.level=1)
-  
-  # Get connection weights:
-  if (cowt) {
-    dnn <- list(model=res[[1]], graph=dag)
-    cowt <- getConnectionWeight(object=dnn, thr=thr)
-    est <- list(beta=cowt$est, psi=res$sigma)
-    dag <- cowt$dag
-  }else{
-    est <- list(beta=NULL, psi=res$sigma)
-    dag <- dag
-  }
-  
-  # Shat and Sobs matrices :
-  #Shat <- cor(cbind(Z_test[,Vx], res$yhat[,Vy]))
-  #Sobs <- cor(Z_test[, c(Vx,Vy)])
-  Shat <- cor(cbind(Z_train[,Vx], res$YHAT[,Vy]))
-  Sobs <- cor(Z_train[, c(Vx,Vy)])
-  E <- Sobs - Shat # diag(E)
-  
-  # Fit indices :
-  SRMR <- sqrt(mean(E[lower.tri(E, diag = TRUE)]^2))
-  logL <- -0.5 * (sum(log(res$sigma)) + py * log(n))#GOLEM, NeurIPS 2020
-  AMSE <- mean(res$sigma) #average Mean Square Error
-  idx <- c(logL = logL, amse = AMSE, rmse = sqrt(AMSE), srmr = SRMR)
-  it <- py * epochs
-  cat(paste0("DNN solver ended normally after ", it, " iterations"),"\n\n")
-  cat(" logL:", idx[1], " srmr:", round(idx[4],7), "\n\n")
-  
-  fit <- list(Sigma=Shat, Beta=NULL, Psi=res[[2]], fitIdx=idx, parameterEstimates=est)
-  res <- list(fit=fit, Yhat=res[[3]], model=res[[1]], graph=dag, data=data[train,V(dag)$name])
-  class(res) <- "DNN"
-  
-  return(res)	
+	# Set graph and data objects :
+	nodes <- colnames(data)[colnames(data) %in% V(graph)$name]
+	graph <- induced_subgraph(graph, vids=which(V(graph)$name %in% nodes))
+	dag <- graph2dag(graph, data[train,], bap=FALSE) #del cycles & all <->
+	din <- igraph::degree(dag, mode= "in")
+	Vx <- V(dag)$name[din == 0]
+	Vy <- V(dag)$name[din != 0]
+	px <- length(Vx)
+	py <- length(Vy)
+		
+	X <- data[, V(dag)$name]
+	if (!is.null(train)) {
+	  Z_train <- scale(X[train, ])
+	  mp <- apply(Z_train, 2, mean)
+	  sp <- apply(Z_train, 2, sd)
+	  Z_test <- scale(X[-train, ], center=mp, scale=sp)
+	}else{
+	  Z_train <- Z_test <- scale(X)
+	}
+	n <- nrow(Z_train)
+
+	# Check whether a compatible GPU is available for computation.
+	#use_cuda <- torch::cuda_is_available()
+	#device <- ifelse(use_cuda, "cuda", "cpu")
+	res <- parameterEstimates.DNN(dag, Z_train, Z_test,
+	        loss, hidden, link, validation, bias, lambda,
+			alpha, dropout, optimizer, lr, epochs, device,
+			early_stopping, verbose)
+	#str(res, max.level=1)
+
+	# Get connection weights:
+	if (cowt) {
+	  dnn <- list(model=res[[1]], graph=dag)
+	  cowt <- getConnectionWeight(object=dnn, thr=thr)
+	  est <- list(beta=cowt$est, psi=res$sigma)
+	  dag <- cowt$dag
+	}else{
+	  est <- list(beta=NULL, psi=res$sigma)
+	  dag <- dag
+	}
+
+	# Shat and Sobs matrices :
+	#Shat <- cor(cbind(Z_test[,Vx], res$yhat[,Vy]))
+	#Sobs <- cor(Z_test[, c(Vx,Vy)])
+	Shat <- cor(cbind(Z_train[,Vx], res$YHAT[,Vy]))
+	Sobs <- cor(Z_train[, c(Vx,Vy)])
+	E <- Sobs - Shat # diag(E)
+
+	# Fit indices :
+	SRMR <- sqrt(mean(E[lower.tri(E, diag = TRUE)]^2))
+	logL <- -0.5 * (sum(log(res$sigma)) + py * log(n))#GOLEM, NeurIPS 2020
+	AMSE <- mean(res$sigma) #average Mean Square Error
+	idx <- c(logL = logL, amse = AMSE, rmse = sqrt(AMSE), srmr = SRMR)
+	it <- py * epochs
+	cat(paste0("DNN solver ended normally after ", it, " iterations"),"\n\n")
+	cat(" logL:", idx[1], " srmr:", round(idx[4],7), "\n\n")
+	
+	fit <- list(Sigma=Shat, Beta=NULL, Psi=res[[2]], fitIdx=idx, parameterEstimates=est)
+	res <- list(fit=fit, Yhat=res[[3]], model=res[[1]], graph=dag, data=data[train,V(dag)$name])
+	class(res) <- "DNN"
+
+	return(res)	
 }
 
 parameterEstimates.DNN <- function(dag, Z_train, Z_test,
-                                   loss, hidden, link, validation, bias, lambda, alpha, dropout,
-                                   optimizer, lr, epochs, device, early_stopping, verbose, ...)
+	loss, hidden, link, validation, bias, lambda, alpha, dropout,
+	optimizer, lr, epochs, device, early_stopping, verbose, ...)
 {
-  # Set objects:
-  V(dag)$name<- paste0("z", V(dag)$name)
-  colnames(Z_train)<- paste0("z", colnames(Z_train))
-  colnames(Z_test)<- paste0("z", colnames(Z_test))
-  L<- buildLevels(dag)
-  #pe<- igraph::as_data_frame(dag)[,c(1,2)]
-  #y<- split(pe, f=pe$to)
-  #y; length(y); names(y)
-  sigma<- NULL
-  yhat<- NULL
-  YHAT<- NULL
-  est<- NULL
-  dnn<- list()
-  
-  for (l in 1:(length(L)-1)) {
-    cat(l, ":", L[[l]], "\n")
-    yn<- L[[l]]
-    xn<- unlist(L[(l+1):length(L)])
-    X<- data.frame(Z_train[,xn])
-    if (ncol(X) == 1) colnames(X)<- xn
-    Y<- data.frame(Z_train[,yn])
-    if (ncol(Y) == 1) colnames(Y)<- yn
-    
-    #fitting a dnn model to predict Y on X
-    nn.fit <- cito::dnn(data = Z_train, 
-                        loss = loss,
-                        hidden = hidden,
-                        activation = link,
-                        validation = validation,
-                        bias = bias, 
-                        lambda = lambda,
-                        alpha = alpha,
-                        dropout = dropout,
-                        optimizer = optimizer,
-                        lr = lr,
-                        epochs = epochs,
-                        plot = verbose,
-                        verbose = FALSE,
-                        device = device,
-                        early_stopping = early_stopping,
-                        X = X,
-                        Y = Y)
-    
-    #print(nn.fit)
-    print(nn.fit$losses[epochs,]); cat("\n")
-    
-    #TRAIN predictions and prediction error (MSE)
-    #pred <- predict(nn.fit, Z_train)
-    #pe <- apply((Z_test[,yn] - pred)^2, 2, mean)
-    #yhat <- cbind(yhat, pred)
-    PRED <- predict(nn.fit, Z_train)
-    pe <- apply((Z_train[,yn] - PRED)^2, 2, mean)
-    sigma <- c(sigma, pe)
-    dnn <- c(dnn, list(nn.fit))
-    YHAT <- cbind(YHAT, PRED)
-  }
-  
-  #colnames(yhat) <- sub(".", "", unlist(L[-length(L)]))
-  colnames(YHAT) <- sub(".", "", unlist(L[-length(L)]))
-  names(sigma) <- sub(".", "", unlist(L[-length(L)]))
-  
-  return(list(dnn = dnn, sigma = sigma, YHAT = YHAT, est = est))
+	# Set objects:
+	V(dag)$name<- paste0("z", V(dag)$name)
+	colnames(Z_train)<- paste0("z", colnames(Z_train))
+	colnames(Z_test)<- paste0("z", colnames(Z_test))
+	L<- buildLevels(dag)
+	#pe<- igraph::as_data_frame(dag)[,c(1,2)]
+	#y<- split(pe, f=pe$to)
+	#y; length(y); names(y)
+	sigma<- NULL
+	yhat<- NULL
+	YHAT<- NULL
+	est<- NULL
+	dnn<- list()
+		
+	for (l in 1:(length(L)-1)) {
+	  cat(l, ":", L[[l]], "\n")
+	  yn<- L[[l]]
+	  xn<- unlist(L[(l+1):length(L)])
+	  X<- data.frame(Z_train[,xn])
+	  if (ncol(X) == 1) colnames(X)<- xn
+	  Y<- data.frame(Z_train[,yn])
+	  if (ncol(Y) == 1) colnames(Y)<- yn
+	  
+	  #fitting a dnn model to predict Y on X
+	  nn.fit <- cito::dnn(data = Z_train, 
+					loss = loss,
+					hidden = hidden,
+					activation = link,
+					validation = validation,
+					bias = bias, 
+					lambda = lambda,
+					alpha = alpha,
+					dropout = dropout,
+					optimizer = optimizer,
+					lr = lr,
+					epochs = epochs,
+					plot = verbose,
+					verbose = FALSE,
+					device = device,
+					early_stopping = early_stopping,
+					X = X,
+					Y = Y)
+
+	  #print(nn.fit)
+	  print(nn.fit$losses[epochs,]); cat("\n")
+
+	  #TRAIN predictions and prediction error (MSE)
+	  #pred <- predict(nn.fit, Z_train)
+	  #pe <- apply((Z_test[,yn] - pred)^2, 2, mean)
+	  #yhat <- cbind(yhat, pred)
+	  PRED <- predict(nn.fit, Z_train)
+	  pe <- apply((Z_train[,yn] - PRED)^2, 2, mean)
+	  sigma <- c(sigma, pe)
+	  dnn <- c(dnn, list(nn.fit))
+	  YHAT <- cbind(YHAT, PRED)
+	}
+	
+	#colnames(yhat) <- sub(".", "", unlist(L[-length(L)]))
+	colnames(YHAT) <- sub(".", "", unlist(L[-length(L)]))
+	names(sigma) <- sub(".", "", unlist(L[-length(L)]))
+	
+	return(list(dnn = dnn, sigma = sigma, YHAT = YHAT, est = est))
 }
 
 #' @title SEM-based out-of-sample prediction using layer-wise DNN
@@ -433,7 +434,7 @@ parameterEstimates.DNN <- function(dag, Z_train, Z_test,
 #' mse1 <- predict(dnn1, data1[-train, ])
 #' yobs <- group[-train]
 #' yhat <- mse1$Yhat[ ,"outcome"]
-#' performance(yobs, yhat, thr=0, F1=FALSE)
+#' benchmark(yobs, yhat, thr=0, F1=FALSE)
 #' }
 #' }
 #'
@@ -444,34 +445,34 @@ parameterEstimates.DNN <- function(dag, Z_train, Z_test,
 
 predict.DNN <- function(object, newdata, verbose=FALSE, ...)
 {
-  dnn.fit <- object$model
-  stopifnot(inherits(dnn.fit[[1]], "citodnn"))
-  vp <- colnames(object$data)
-  mp <- apply(object$data, 2, mean)
-  sp <- apply(object$data, 2, sd)
-  Z_test <- scale(newdata[,vp], center=mp, scale=sp)
-  colnames(Z_test) <- paste0("z", "", colnames(Z_test))
-  
-  yhat <- NULL
-  yn <- c()
-  for (j in 1:length(dnn.fit)) {
-    fit <- dnn.fit[[j]]
-    vn <- all.vars(fit$old_formula)
-    vx <- colnames(fit$data$X)
-    vy <- vn[vn %in% vx == FALSE]
-    pred <- predict(fit, Z_test)
-    yhat <- cbind(yhat, pred)
-    yn <- c(yn, vy)
-  }
-  
-  yobs<- Z_test[, yn]
-  PE<- colMeans((yobs - yhat)^2)
-  pe<- mean((yobs - yhat)^2)
-  colnames(yhat) <- gsub("z", "", yn)
-  names(PE) <- colnames(yhat)
-  if (verbose) print(c(amse=pe,PE))
-  
-  return(list(PE=c(amse=pe,PE), Yhat=yhat))
+	dnn.fit <- object$model
+	stopifnot(inherits(dnn.fit[[1]], "citodnn"))
+	vp <- colnames(object$data)
+	mp <- apply(object$data, 2, mean)
+	sp <- apply(object$data, 2, sd)
+	Z_test <- scale(newdata[,vp], center=mp, scale=sp)
+	colnames(Z_test) <- paste0("z", "", colnames(Z_test))
+
+	yhat <- NULL
+	yn <- c()
+	for (j in 1:length(dnn.fit)) {
+	  fit <- dnn.fit[[j]]
+	  vn <- all.vars(fit$old_formula)
+	  vx <- colnames(fit$data$X)
+	  vy <- vn[vn %in% vx == FALSE]
+	  pred <- predict(fit, Z_test)
+	  yhat <- cbind(yhat, pred)
+	  yn <- c(yn, vy)
+	}
+
+	yobs<- Z_test[, yn]
+	PE<- colMeans((yobs - yhat)^2)
+	pe<- mean((yobs - yhat)^2)
+	colnames(yhat) <- gsub("z", "", yn)
+	names(PE) <- colnames(yhat)
+	if (verbose) print(c(amse=pe,PE))
+	
+	return(list(PE=c(amse=pe,PE), Yhat=yhat))
 }
 
 #' @title Gradient Weight Approach for neural network variable importance
@@ -542,70 +543,70 @@ predict.DNN <- function(object, newdata, verbose=FALSE, ...)
 
 getGradientWeight<- function(object, thr = NULL, verbose = FALSE, ...)
 {
-  model <- object$model
-  graph <- object$graph
-  A <- as_adjacency_matrix(graph, sparse=FALSE)
-  rownames(A) <- paste0("z", rownames(A))
-  colnames(A) <- rownames(A)
-  est <- NULL
-  
-  pb <- txtProgressBar(min = 0, max = length(model), style = 3)
-  for (j in 1:length(model)) {
-    W <- quiet(print(cito::conditionalEffects(model[[j]])))
-    vn <- all.vars(model[[j]]$old_formula)
-    vx <- colnames(model[[j]]$data$X)
-    vy <- vn[vn %in% vx == FALSE]
-    WA <- as.matrix(W * A[vx, vy])
-    X <- gsub("z", "", vx)
-    Y <- gsub("z", "", vy)
-    
-    for (k in 1:length(Y)) {
-      label <- data.frame(
-        lhs = rep(Y[k], length(X)),
-        op = "~",
-        rhs = X)
-      est <- rbind(est, cbind(label, WA[,k]))
-    }
-    setTxtProgressBar(pb, j)
-  }
-  cat("\n")
-  est<- est[est[,4] != 0, ]
-  rownames(est)<- NULL
-  colnames(est)[4]<- "grad"
-  class(est)<- c("lavaan.data.frame","data.frame")
-  
-  df<- data.frame(est[,3],est[,1],weight=est[,4])
-  dag<- graph_from_data_frame(df)
-  if (is.null(thr)) thr <- mean(abs(E(dag)$weight))
-  dag<- colorDAG(dag, thr=thr, verbose=verbose)
-  
-  return(list(est = est, dag = dag))
+	model <- object$model
+	graph <- object$graph
+	A <- as_adjacency_matrix(graph, sparse=FALSE)
+	rownames(A) <- paste0("z", rownames(A))
+	colnames(A) <- rownames(A)
+	est <- NULL
+	
+	pb <- txtProgressBar(min = 0, max = length(model), style = 3)
+	for (j in 1:length(model)) {
+	  W <- quiet(print(cito::conditionalEffects(model[[j]])))
+	  vn <- all.vars(model[[j]]$old_formula)
+	  vx <- colnames(model[[j]]$data$X)
+	  vy <- vn[vn %in% vx == FALSE]
+	  WA <- as.matrix(W * A[vx, vy])
+	  X <- gsub("z", "", vx)
+	  Y <- gsub("z", "", vy)
+	  
+	  for (k in 1:length(Y)) {
+	   label <- data.frame(
+				 lhs = rep(Y[k], length(X)),
+				 op = "~",
+				 rhs = X)
+	   est <- rbind(est, cbind(label, WA[,k]))
+	  }
+	  setTxtProgressBar(pb, j)
+	}
+	cat("\n")
+	est<- est[est[,4] != 0, ]
+	rownames(est)<- NULL
+	colnames(est)[4]<- "grad"
+	class(est)<- c("lavaan.data.frame","data.frame")
+
+	df<- data.frame(est[,3],est[,1],weight=est[,4])
+	dag<- graph_from_data_frame(df)
+	if (is.null(thr)) thr <- mean(abs(E(dag)$weight))
+	dag<- colorDAG(dag, thr=thr, verbose=verbose)
+
+	return(list(est = est, dag = dag))
 }
 
 colorDAG <- function(dag, psi=NULL, thr=NULL, verbose=FALSE, ...)
 {
-  # set node and edge colors :
-  din<- igraph::degree(dag, mode= "in")
-  dout<- igraph::degree(dag, mode = "out")
-  #V(dag)$color[din == 0]<- "cyan"
-  #V(dag)$color[dout == 0]<- "orange"
-  if (!is.null(psi)) {
-    Ve <- names(psi)[psi < mean(psi)]
-    V(dag)$color <- ifelse(V(dag)$name %in% Ve, "pink", "white")
-    V(dag)$color[din == 0] <- "cyan"
-  }
-  enames <- attr(E(dag), "vnames")
-  weight <- E(dag)$weight
-  Er <- enames[abs(weight) > thr & weight < 0]
-  Ea <- enames[abs(weight) > thr & weight > 0]
-  E(dag)$color <- ifelse(attr(E(dag), "vnames") %in% 
-                           Er, "royalblue3", ifelse(attr(E(dag), "vnames") %in%
-                                                      Ea, "red2", "gray50"))
-  E(dag)$width <- ifelse(E(dag)$color == "gray50", 1, 2)
-  
-  if (verbose) gplot(dag)
-  
-  return(dag)
+	# set node and edge colors :
+	din<- igraph::degree(dag, mode= "in")
+	dout<- igraph::degree(dag, mode = "out")
+	#V(dag)$color[din == 0]<- "cyan"
+	#V(dag)$color[dout == 0]<- "orange"
+	if (!is.null(psi)) {
+	 Ve <- names(psi)[psi < mean(psi)]
+	 V(dag)$color <- ifelse(V(dag)$name %in% Ve, "pink", "white")
+	 V(dag)$color[din == 0] <- "cyan"
+	}
+	enames <- attr(E(dag), "vnames")
+	weight <- E(dag)$weight
+	Er <- enames[abs(weight) > thr & weight < 0]
+	Ea <- enames[abs(weight) > thr & weight > 0]
+	E(dag)$color <- ifelse(attr(E(dag), "vnames") %in% 
+			Er, "royalblue3", ifelse(attr(E(dag), "vnames") %in%
+			Ea, "red2", "gray50"))
+	E(dag)$width <- ifelse(E(dag)$color == "gray50", 1, 2)
+
+	if (verbose) gplot(dag)
+
+	return(dag)
 }
 
 #' @title Connection Weight Approach for neural network variable importance
@@ -684,58 +685,58 @@ colorDAG <- function(dag, psi=NULL, thr=NULL, verbose=FALSE, ...)
 
 getConnectionWeight<- function(object, thr = NULL, verbose = FALSE, ...)
 {
-  model <- object$model
-  graph <- object$graph
-  A <- as_adjacency_matrix(graph, sparse=FALSE)
-  rownames(A) <- paste0("z", rownames(A))
-  colnames(A) <- rownames(A)
-  est <- NULL
-  
-  for (j in 1:length(model)) {
-    W <- getWeight(model[[j]], A)
-    X <- gsub("z", "", rownames(W))
-    Y <- gsub("z", "", colnames(W))
-    
-    for (k in 1:ncol(W)) {
-      label<- data.frame(
-        lhs = rep(Y[k], length(X)),
-        op = "~",
-        rhs = X)
-      est <- rbind(est, cbind(label, W[,k]))
-    }
-  }
-  est<- est[est[,4] !=  0, ]
-  rownames(est)<- NULL
-  colnames(est)[4]<- "weight"
-  class(est)<- c("lavaan.data.frame","data.frame")
-  
-  df<- data.frame(est[,3],est[,1],weight=est[,4])
-  dag<- graph_from_data_frame(df)
-  if (is.null(thr)) thr <- mean(abs(E(dag)$weight))
-  dag<- colorDAG(dag, thr=thr, verbose=verbose)
-  
-  return(list(est = est, dag = dag))
+	model <- object$model
+	graph <- object$graph
+	A <- as_adjacency_matrix(graph, sparse=FALSE)
+	rownames(A) <- paste0("z", rownames(A))
+	colnames(A) <- rownames(A)
+	est <- NULL
+	
+	for (j in 1:length(model)) {
+	  W <- getWeight(model[[j]], A)
+	  X <- gsub("z", "", rownames(W))
+	  Y <- gsub("z", "", colnames(W))
+	  
+	  for (k in 1:ncol(W)) {
+	   label<- data.frame(
+				lhs = rep(Y[k], length(X)),
+				op = "~",
+				rhs = X)
+	   est <- rbind(est, cbind(label, W[,k]))
+	  }
+	}
+	est<- est[est[,4] !=  0, ]
+	rownames(est)<- NULL
+	colnames(est)[4]<- "weight"
+	class(est)<- c("lavaan.data.frame","data.frame")
+	
+	df<- data.frame(est[,3],est[,1],weight=est[,4])
+	dag<- graph_from_data_frame(df)
+	if (is.null(thr)) thr <- mean(abs(E(dag)$weight))
+	dag<- colorDAG(dag, thr=thr, verbose=verbose)
+	
+	return(list(est = est, dag = dag))
 }
 
 getWeight<- function(nn.fit, A, ...)
 {
-  # Matrix product of input-hidden, hidden-output weights,
-  # proposed by Olden et al. Ecol. Model. 2004;389–397
-  W <- coef(nn.fit)[[1]]
-  w <- t(W[[1]])
-  for (k in seq(3, length(W), by=2)) { 
-    w <- w %*% t(W[[k]])
-    if (length(W) == 4) break
-  }
-  
-  vn <- all.vars(nn.fit$old_formula)
-  vx <- colnames(nn.fit$data$X)
-  vy <- vn[vn %in% vx == FALSE]
-  wa <- as.matrix(w * A[vx, vy])
-  rownames(wa) <- vx
-  colnames(wa) <- vy
-  
-  return(wa)
+	# Matrix product of input-hidden, hidden-output weights,
+	# proposed by Olden et al. Ecol. Model. 2004;389–397
+	W <- coef(nn.fit)[[1]]
+	w <- t(W[[1]])
+	for (k in seq(3, length(W), by=2)) { 
+	 w <- w %*% t(W[[k]])
+	 if (length(W) == 4) break
+	}
+	
+	vn <- all.vars(nn.fit$old_formula)
+	vx <- colnames(nn.fit$data$X)
+	vy <- vn[vn %in% vx == FALSE]
+	wa <- as.matrix(w * A[vx, vy])
+	rownames(wa) <- vx
+	colnames(wa) <- vy
+	
+	return(wa)
 }
 
 #' @title Test for the significance of neural network inputs
@@ -803,78 +804,78 @@ getWeight<- function(nn.fit, A, ...)
 
 getInputPvalue<- function(object, thr = NULL, verbose = FALSE, ...)
 {
-  model <- object$model
-  graph <- object$graph
-  A <- as_adjacency_matrix(graph, sparse=FALSE)
-  rownames(A) <- paste0("z", rownames(A))
-  colnames(A) <- rownames(A)
-  est <- NULL
-  
-  for (j in 1:length(model)) {
-    W <- getPvalue(model[[j]], A)
-    Y <- gsub("z", "", names(W))
-    
-    for (k in 1:length(Y)) {
-      X <- gsub("z", "", rownames(W[[k]]))
-      label<- data.frame(
-        lhs = rep(Y[k], length(X)),
-        op = "~",
-        rhs =  X)
-      est <- rbind(est, cbind(label, W[[k]]))
-    }
-    
-  }
-  rownames(est)<- NULL
-  class(est)<- c("lavaan.data.frame","data.frame")
-  
-  p.adj<- p.adjust(est$pvalue, method="bonferroni")
-  weight<- sign(est[,4]) * (1 - p.adj)
-  df<- data.frame(est[,3],est[,1],weight=weight)
-  dag<- graph_from_data_frame(df)
-  if (is.null(thr)) thr <- 0.05
-  dag<- colorDAG(dag, thr=(1-thr), verbose=verbose)
-  
-  return(list(est = est, dag = dag))
+	model <- object$model
+	graph <- object$graph
+	A <- as_adjacency_matrix(graph, sparse=FALSE)
+	rownames(A) <- paste0("z", rownames(A))
+	colnames(A) <- rownames(A)
+	est <- NULL
+	
+	for (j in 1:length(model)) {
+	  W <- getPvalue(model[[j]], A)
+	  Y <- gsub("z", "", names(W))
+	  
+	  for (k in 1:length(Y)) {
+	   X <- gsub("z", "", rownames(W[[k]]))
+	   label<- data.frame(
+				lhs = rep(Y[k], length(X)),
+				op = "~",
+				rhs =  X)
+	   est <- rbind(est, cbind(label, W[[k]]))
+	  }
+	
+	}
+	rownames(est)<- NULL
+	class(est)<- c("lavaan.data.frame","data.frame")
+		
+	p.adj<- p.adjust(est$pvalue, method="none")
+	weight<- sign(est[,4]) * (1 - p.adj)
+	df<- data.frame(est[,3],est[,1],weight=weight)
+	dag<- graph_from_data_frame(df)
+	if (is.null(thr)) thr <- 0.05
+	dag<- colorDAG(dag, thr=(1-thr), verbose=verbose)
+		
+	return(list(est = est, dag = dag))
 }
 
-getPvalue <- function(nn.fit, A, ...) #nn.fit=model[[j]]
+getPvalue <- function(nn.fit, A, ...)
 {
-  # Test of significance of each yhat fixing other predictors at
-  # zero, proposed by S. Mohammadi, Neurocomputing 2018; 304-322
-  Z <- scale(nn.fit$data$data)
-  vn <- all.vars(nn.fit$old_formula)
-  vx <- colnames(nn.fit$data$X)
-  vy <- vn[vn %in% vx == FALSE]
-  Aj<- as.matrix(A[vx,vy])
-  
-  Y<- as.matrix(Z[,vy])
-  X<- as.matrix(Z[,vx])
-  X0<- matrix(0, nrow(X), ncol(X))
-  colnames(X0)<- vx
-  
-  Yhat<- list()
-  for (k in 1:length(vx)) {
-    X0[,k]<- X[,k]
-    Yhatk<- predict(nn.fit, newdata = X0)
-    colnames(Yhatk)<- vy
-    Yhat<- c(Yhat,list(Yhatk))
-  } 
-  names(Yhat) <- vx
-  
-  # Fit a multiple linear model of Yj on Yhatj
-  est<- list()
-  for (j in 1:length(vy)) {
-    Xj<- data.frame(sapply(Yhat, function(x) x[,j]))
-    nj<- colnames(Xj)[Aj[,j] == 1]
-    Zj<- data.frame(Y[,j], Xj[,nj])
-    colnames(Zj)<- c(vy[j], nj)
-    f<- paste0(vy[j], "~.")
-    fit<- lm(eval(f), data = Zj)
-    estj<- data.frame(summary(fit)$coefficients)[-1, ]
-    colnames(estj)<- c("est", "se", "t", "pvalue")
-    est<- c(est, list(estj))
-  }
-  names(est) <- vy
-  
-  return(est)
+	# Test of significance of each yhat fixing other predictors at
+	# zero, proposed by S. Mohammadi, Neurocomputing 2018; 304-322
+	Z <- scale(nn.fit$data$data)
+	vn <- all.vars(nn.fit$old_formula)
+	vx <- colnames(nn.fit$data$X)
+	vy <- vn[vn %in% vx == FALSE]
+	Aj<- as.matrix(A[vx,vy])
+	
+	Y<- as.matrix(Z[,vy])
+	X<- as.matrix(Z[,vx])
+	X0<- matrix(0, nrow(X), ncol(X))
+	colnames(X0)<- vx
+
+	Yhat<- list()
+	for (k in 1:length(vx)) {
+	  X0[,k]<- X[,k]
+	  Yhatk<- predict(nn.fit, newdata = X0)
+	  colnames(Yhatk)<- vy
+	  Yhat<- c(Yhat,list(Yhatk))
+	} 
+	names(Yhat) <- vx
+
+	# Fit a multiple linear model of Yj on Yhatj
+	est<- list()
+	for (j in 1:length(vy)) {
+	  Xj<- data.frame(sapply(Yhat, function(x) x[,j]))
+	  nj<- colnames(Xj)[Aj[,j] == 1]
+	  Zj<- data.frame(Y[,j], Xj[,nj])
+	  colnames(Zj)<- c(vy[j], nj)
+	  f<- paste0(vy[j], "~.")
+	  fit<- lm(eval(f), data = Zj)
+	  estj<- data.frame(summary(fit)$coefficients)[-1, ]
+	  colnames(estj)<- c("est", "se", "t", "pvalue")
+	  est<- c(est, list(estj))
+	}
+	names(est) <- vy
+
+	return(est)
 }
