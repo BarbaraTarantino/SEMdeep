@@ -104,25 +104,20 @@ train<- sample(1:nrow(data), 0.5*nrow(data))
 
 start<- Sys.time()
 # ... rf
-#res1<- SEMml(ig, data, train, algo="rf", vimp=FALSE)
 res1<- SEMml(ig, data, train, algo="rf", vimp=TRUE)
 
 # ... xgb
-#res2<- SEMml(ig, data, train, algo="xgb", vimp=FALSE)
 res2<- SEMml(ig, data, train, algo="xgb", vimp=TRUE)
 
 # ... nn
-#res3<- SEMml(ig, data, train, algo="nn", vimp=FALSE)
 res3<- SEMml(ig, data, train, algo="nn", vimp=TRUE)
 
 # ... gam
-#res4<- SEMml(ig, data, train, algo="gam", vimp=FALSE)
 res4<- SEMml(ig, data, train, algo="gam", vimp=TRUE)
 end<- Sys.time()
 print(end-start)
 
 # ... sem
-#res5<- SEMml(ig, data, train, algo="sem", vimp=FALSE)
 res5<- SEMml(ig, data, train, algo="sem", vimp=TRUE)
 
 #str(res5, max.level=2)

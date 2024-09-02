@@ -64,8 +64,6 @@ set.seed(123)
 train<- sample(1:nrow(data), 0.5*nrow(data))
 
 # SEM fitting
-#sem0<- SEMrun(ig, data[train,], algo="lavaan", SE="none")
-#sem0<- SEMrun(ig, data[train,], algo="ricf", n_rep=0)
 sem0<- SEMrun(ig, data[train,], SE="none", limit=1000)
 
 # predictors, source+mediator; outcomes, mediator+sink
@@ -74,8 +72,6 @@ res0<- predict(sem0, newdata=data[-train,])
 print(res0$PE)
 
 # SEM fitting
-#sem1<- SEMrun(ig, data[train,], group[train], algo="lavaan", SE="none")
-#sem1<- SEMrun(ig, data[train,], group[train], algo="ricf", n_rep=0)
 sem1<- SEMrun(ig, data[train,], group[train], SE="none", limit=1000)
 
 # predictors, source+mediator+group; outcomes, source+mediator+sink
@@ -102,24 +98,6 @@ ig2<- mapGraph(ig, type= "source"); gplot(ig2)
 
 sem02 <- SEMrun(ig2, data[train,], SE="none", limit=1000)
 res02<- predict(sem02, newdata=data[-train,], verbose=TRUE) 
-#print(res02$PE)
-
-#...with 10-iterations of 10-fold cross-validation samples
-
-res<- NULL
-for (r in 1:10) {
-  set.seed(r)
-  cat("rep = ", r, "\n")
-  idx <- SEMdeep:::createFolds(y=data[,1], k=10)
-	for (k in 1:10) {
-	 cat("  k-fold = ", k, "\n")
-	 semr<- SEMdeep:::quiet(SEMrun(ig, data, SE="none", limit=1000))
-	 resr<- predict(semr, newdata=data[-idx[[k]], ])
-	 res<- rbind(res, resr$PE)
-	}
-}
-#average results
-apply(res, 2, mean)
 }
 
 }

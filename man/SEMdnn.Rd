@@ -165,7 +165,6 @@ group<- alsData$group
 #...with train-test (0.5-0.5) samples
 set.seed(123)
 train<- sample(1:nrow(data), 0.5*nrow(data))
-#thr<- 1/sqrt(2*nrow(data[train, ])) #Joseph(2020, formula 22)
 
 start<- Sys.time()
 dnn0 <- SEMdnn(ig, data, train, cowt = TRUE, thr = NULL,
@@ -206,10 +205,8 @@ table(E(dnn1$graph)$color)
 #...with input -> hidden structure -> output :
 # source nodes -> graph layer structure -> sink nodes
 
-#View topological layer (TL) ordering
-dag<- graph2dag(dnn0$graph, data[train,])
-L<- SEMdeep:::buildLevels(dag);L
-K<- unlist(lapply(L, length));K
+#Topological layer (TL) ordering
+K<- c(12,  5,  3,  2,  1,  8)
 K<- rev(K[-c(1,length(K))]);K
 
 ig2<- mapGraph(ig, type="source"); gplot(ig2)

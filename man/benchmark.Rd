@@ -74,8 +74,6 @@ res <- SEMml(ig1, data1, train, algo="rf")
 mse <- predict(res, data1[-train, ])
 yobs<- group[-train]
 yhat<- mse$Yhat[ ,"outcome"]
-#yprob<- exp(yhat)/(1+exp(yhat))
-#benchmark(yobs, yprob, thr=0.5)
 
 # ... evaluate predictive benchmark (sp, se, acc, mcc)
 benchmark(yobs, yhat, thr=0, F1=FALSE)
@@ -90,7 +88,7 @@ benchmark(CT=table(yobs, ypred), F1=TRUE)
 #...with density plots of yhat per group
 old.par <- par(no.readonly = TRUE)
 benchmark(yobs, yhat, thr=0, F1=FALSE, verbose = TRUE)
-par(old.par)
+on.exit(par(old.par))
 }
 
 }
