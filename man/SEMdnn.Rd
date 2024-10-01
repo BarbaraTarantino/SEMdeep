@@ -105,14 +105,15 @@ An S3 object of class "DNN" is returned. It is a list of 5 objects:
 \item "fit", a list of DNN model objects, including: the estimated covariance 
 matrix (Sigma), the estimated model errors (Psi), the fitting indices (fitIdx),
 and the estimated connection weights (parameterEstimates), if cowt=TRUE.
-\item “Yhat”, a matrix of prediction values of sink and mediator graph nodes. 
+\item "Yhat", the matrix of continuous predicted values of graph nodes  
+(excluding source nodes) based on training samples. 
 \item "model", a list of all j=1,...,(L-1) fitted MLP network models.
 \item "graph", the induced DAG of the input graph mapped on data variables.
 If cowt=TRUE, the DAG is colored based on the estimated connection weights, if
 abs(W) > thr and W < 0,  the edge is inhibited and it is highlighted in blue;
 otherwise, if abs(W) > thr and W > 0, the edge is activated and it is highlighted
 in red. 
-\item "data", input training data subset mapping graph nodes.
+\item "data", training data subset mapping graph nodes.
 }
 }
 \description{

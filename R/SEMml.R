@@ -74,14 +74,15 @@
 #' \item "fit", a list of ML model objects, including: the estimated covariance 
 #' matrix (Sigma),  the estimated model errors (Psi), the fitting indices (fitIdx),
 #' and the signed Shapley R2 values (parameterEstimates), if shap = TRUE,
-#' \item "Yhat", a matrix of predictions of sink and mediator graph nodes. 
+#' \item "Yhat", the matrix of continuous predicted values of graph nodes  
+#' (excluding source nodes) based on training samples. 
 #' \item "model", a list of all the fitted nodewise-based models 
 #' (sem, gam, rf, xgb or nn).
 #' \item "graph", the induced DAG of the input graph  mapped on data variables. 
 #' If vimp = TRUE, the DAG is colored based on the variable importance measure,
 #' i.e., if abs(vimp) > thr will be highlighted in red (vimp > 0) or blue
 #' (vimp < 0). 
-#' \item "data", input training data subset mapping graph nodes. 
+#' \item "data", training data subset mapping graph nodes. 
 #' }
 #'
 #' @author Mario Grassi \email{mario.grassi@unipv.it}
@@ -192,206 +193,222 @@
 
 SEMml <- function(graph, data, train = NULL, algo = "sem", vimp = FALSE, thr = NULL, verbose = FALSE, ...) 
 {
-  # Set graph and data objects:
-  nodes <- colnames(data)[colnames(data) %in% V(graph)$name]
-  graph <- induced_subgraph(graph, vids=which(V(graph)$name %in% nodes))
-  dag <- graph2dag(graph, data[train,], bap=FALSE) #del cycles & all <->
-  din <- igraph::degree(dag, mode= "in")
-  Vx <- V(dag)$name[din == 0]
-  Vy <- V(dag)$name[din != 0]
-  px <- length(Vx)
-  py <- length(Vy)
-  
-  X <- data[, V(dag)$name]
-  if (!is.null(train)) {
-    Z_train <- scale(X[train, ])
-    mp <- apply(Z_train, 2, mean)
-    sp <- apply(Z_train, 2, sd)
-    Z_test <- scale(X[-train, ], center=mp, scale=sp)
-  }else{
-    Z_train <- Z_test <- scale(X)
-  }
-  n <- nrow(Z_train)
-  
-  # extract parameter estimates
-  
-  res <- parameterEstimates.ML(dag, Z_train, Z_test, algo, vimp)
-  #str(res, max.level=1)
-  
-  if (vimp) {
-    class(res$est)<- c("lavaan.data.frame","data.frame")
-    df<- data.frame(res$est[,3],res$est[,1],weight=res$est[,4])
-    dag<- graph_from_data_frame(df)
-    if (is.null(thr)) thr <- mean(abs(E(dag)$weight), na.rm=TRUE)
-    dag<- colorDAG(dag, thr=thr, verbose=verbose)
-  }
-  
-  # Shat and Sobs matrices :
-  #Shat <- cor(cbind(Z_test[,Vx], res$yhat[,Vy]))
-  #rownames(Shat) <- colnames(Shat) <- c(Vx,Vy)
-  #Sobs <- cor(Z_test[, c(Vx,Vy)])
-  Shat <- cor(cbind(Z_train[,Vx], res$YHAT[,Vy]))
-  rownames(Shat) <- colnames(Shat) <- c(Vx,Vy)
-  Sobs <- cor(Z_train[, c(Vx,Vy)])
-  E <- Sobs - Shat # diag(E)
-  
-  # Fit indices : 
-  SRMR <- sqrt(mean(E[lower.tri(E, diag = TRUE)]^2))
-  if (algo == "sem") {
-    sem0 <- quiet(SEMrun(dag, Z_train, SE="none", limit=1000))
-    SRMR <- lavaan::fitMeasures(sem0$fit, "srmr")
-  }
-  logL <- -0.5 * (sum(log(res$sigma)) + py * log(n))#GOLEM, NeurIPS 2020
-  AMSE <- mean(res$sigma, na.rm=TRUE) #average Mean Square Error
-  idx <- c(c(logL=logL, amse=AMSE, rmse=sqrt(AMSE), srmr=SRMR))
-  message("\n", toupper(algo), " solver ended normally after ", py, " iterations")
-  message("\n", " logL:", round(idx[1],6), "  srmr:", round(idx[4],6))
-  
-  fit <- list(Sigma=Shat, Beta=NULL, Psi=res[[2]], fitIdx=idx, parameterEstimates=res[[4]], formula=res[[5]])
-  res <- list(fit=fit, Yhat=res[[3]], model=res[[1]], graph=dag, data=data[train,V(dag)$name])
-  class(res) <- "ML"
-  
-  return(res)	
+	# Set graph and data objects:
+	nodes <- colnames(data)[colnames(data) %in% V(graph)$name]
+	graph <- induced_subgraph(graph, vids=which(V(graph)$name %in% nodes))
+	dag <- graph2dag(graph, data, bap=FALSE) #del cycles & all <->
+	din <- igraph::degree(dag, mode= "in")
+	Vx <- V(dag)$name[din == 0]
+	Vy <- V(dag)$name[din != 0]
+	px <- length(Vx)
+	py <- length(Vy)
+
+	X <- data[, V(dag)$name]
+	if (!is.null(train)) {
+	  Z_train <- scale(X[train, ])
+	  mp <- apply(X[train, ], 2, mean)
+	  sp <- apply(X[train, ], 2, sd)
+	  Z_test <- scale(X[-train, ], center=mp, scale=sp)
+	}else{
+	  train <- 1:nrow(X)
+	  Z_train <- Z_test <- scale(X)
+	}
+	n <- nrow(Z_train)
+
+	# extract parameter estimates
+	
+	res <- parameterEstimates.ML(dag, Z_train, Z_test, algo, vimp)
+	#str(res, max.level=1)
+
+	if (vimp) {
+	 class(res$est)<- c("lavaan.data.frame","data.frame")
+	 df<- data.frame(res$est[,3],res$est[,1],weight=res$est[,4])
+	 dag<- graph_from_data_frame(df)
+	 if (is.null(thr)) thr <- mean(abs(E(dag)$weight), na.rm=TRUE)
+	 dag<- colorDAG(dag, thr=thr, verbose=verbose)
+	}
+	
+	# Shat and Sobs matrices :
+	#Shat <- cor(cbind(Z_test[,Vx], res$yhat[,Vy]))
+	#rownames(Shat) <- colnames(Shat) <- c(Vx,Vy)
+	#Sobs <- cor(Z_test[, c(Vx,Vy)])
+	Shat <- cor(cbind(Z_train[,Vx], res$YHAT[,Vy]))
+	rownames(Shat) <- colnames(Shat) <- c(Vx,Vy)
+	Sobs <- cor(Z_train[, c(Vx,Vy)])
+	E <- Sobs - Shat # diag(E)
+
+	# Fit indices : 
+	SRMR <- sqrt(mean(E[lower.tri(E, diag = TRUE)]^2))
+	if (algo == "sem") {
+	 sem0 <- quiet(SEMrun(dag, Z_train, SE="none", limit=1000))
+	 SRMR <- as.numeric(lavaan::fitMeasures(sem0$fit, "srmr"))
+	}
+	logL <- -0.5 * (sum(log(res$sigma)) + py * log(n))#GOLEM, NeurIPS 2020
+	AMSE <- mean(res$sigma, na.rm=TRUE) #average Mean Square Error
+	idx <- c(c(logL=logL, amse=AMSE, rmse=sqrt(AMSE), srmr=SRMR))
+	message("\n", toupper(algo), " solver ended normally after ", py, " iterations")
+	message("\n", " logL:", round(idx[1],6), "  srmr:", round(idx[4],6))
+
+	fit <- list(Sigma=Shat, Beta=NULL, Psi=res[[2]], fitIdx=idx, parameterEstimates=res[[4]], formula=res[[5]])
+	res <- list(fit=fit, Yhat=res[[3]], model=res[[1]], graph=dag, data=X[train, ])
+	class(res) <- "ML"
+
+	return(res)	
 }
 
 parameterEstimates.ML <- function(dag, Z_train, Z_test, algo, vimp, ...)
 {
-  # Set graph and data objects:
-  V(dag)$name<- paste0("z", V(dag)$name)
-  colnames(Z_train)<- paste0("z", colnames(Z_train))
-  colnames(Z_test)<- paste0("z", colnames(Z_test))
-  pe<- igraph::as_data_frame(dag)[,c(1,2)]
-  y<- split(pe, f=pe$to)
-  #y; length(y); names(y)
-  sigma<- NULL
-  #yhat<- NULL
-  YHAT<- NULL
-  est<- NULL
-  ml<- list()
-  fm<- list()
-  
-  for (j in 1:length(y)) {
-    cat(j, ":", names(y)[j], "\n")
-    Y <- names(y)[j]
-    X <- y[[j]][,1]
-    C <- paste(X, collapse = " + ")
-    #f <- paste(Y,"~",X)
-    f <- formula(paste(Y,"~",C))
-    #pos <- 1
-    envir <- as.environment(1)
-    assign('f',f, envir = envir)
-    
-    # fitting the model to predict Y on X
-    if (algo == "sem") {
-      fit <- lm(eval(f), data = data.frame(Z_train))
-      #fit <- glm(eval(f), family="binomial", data = data.frame(Z_train))
-      if (vimp) vim <- (summary(fit)$coefficients[-1,3])^2
-    }
-    if (algo == "gam") {
-      f <- formula(paste(Y,"~", paste("s(", X, ",bs='ps')", collapse="+")))
-      fit <- mgcv::gam(eval(f), data = data.frame(Z_train))
-      if (vimp) vim <- as.numeric(summary(fit)$s.table[,3])
-    }
-    if (algo == "rf") {
-      fit <- ranger::ranger(eval(f),
-                            data = Z_train,
-                            num.trees = 500, #default
-                            mtry = NULL,     #default
-                            importance = "impurity")
-      if (vimp) vim <- as.numeric(ranger::importance(fit))
-    } 
-    if (algo == "xgb") {
-      xgb_train <- xgboost::xgb.DMatrix(data = as.matrix(Z_train[, X]),
-                                        label = Z_train[, Y])
-      fit <- xgboost::xgboost(data = xgb_train,
-                              booster = "gbtree",
-                              tree_method = "auto",
-                              max.depth = 6, #default
-                              nrounds = 100, #niter
-                              verbose = 0)   #silent																	
-      fit$feature_names <- X
-      vim <- 0
-      if (vimp == TRUE & length(X) > 1) {
-        vimx<- xgboost::xgb.importance(model=fit)
-        vim <- unlist(vimx[,2])
-        names(vim) <- unlist(vimx[,1])
-        vim <- as.numeric(vim[X])
-      }
-    }
-    if (algo == "nn") {
-      fit <- nnet::nnet(eval(f),
-                        data = Z_train,
-                        linout = TRUE,#FALSE default
-                        size = 10,
-                        decay = 5e-3, #0 default
-                        maxit = 1000, #100 default
-                        trace = FALSE,#default
-                        MaxNWts = 1000) #default
-      if (vimp) {
-        vimx <- NeuralNetTools::olden(fit)$data
-        vim <- vimx[,1]
-        names(vim) <- vimx[,2]
-        vim <- as.numeric(vim[X])
-      }
-    }
-    if (algo == "dnn") {
-      fit <- cito::dnn(eval(f),
-                       #as.formula(f),
-                       data = Z_train, 
-                       loss = "mse",
-                       hidden = 1000,
-                       activation = "selu",
-                       validation = 0,
-                       bias = TRUE,
-                       lambda = 0,
-                       alpha = 0.5,
-                       dropout = 0,
-                       optimizer = "adam",
-                       lr = 0.01,
-                       epochs = 32,
-                       plot = FALSE,
-                       verbose = FALSE,
-                       device = "cpu",
-                       early_stopping = FALSE)
-      A <- matrix(rep(1, length(X)),ncol=1,
-                  dimnames = list(X,Y))#A
-      if (vimp) vim <- as.numeric(getWeight(fit, A))
-    }
-    
-    if (vimp){
-      estj <- data.frame(
-        lhs = rep(gsub("z", "", Y), length(X)),
-        op = "~",
-        rhs = gsub("z", "", X),
-        varImp = vim)
-      est <- rbind(est, estj)
-    }
-    
-    #TRAIN predictions and prediction error (MSE)
-    if (algo == "rf"){
-      #pred <- predict(fit, Z_test)$predictions
-      PRED <- predict(fit, Z_train)$predictions
-      #if (OOB) pred <- rf.fit$predictions
-    } else if (algo == "xgb"){
-      #pred <- predict(fit, data.matrix(Z_test[, fit$feature_names]))
-      PRED <- predict(fit, data.matrix(Z_train[, fit$feature_names]))
-    } else{
-      #pred <- predict(fit, data.frame(Z_test))
-      PRED <- predict(fit, data.frame(Z_train))
-    }
-    pe <- mean((Z_train[,Y] - PRED)^2)
-    sigma <- c(sigma, pe)
-    ml <- c(ml, list(fit))
-    fm <- c(fm, list(formula=f))
-    #yhat <- cbind(yhat, pred)
-    YHAT <- cbind(YHAT, PRED)
-  }
-  
-  #colnames(yhat)<- sub(".", "", names(y))
-  colnames(YHAT)<- sub(".", "", names(y))
-  names(sigma) <- sub(".", "", names(y))
-  
-  return(list(ml = ml, sigma = sigma, YHAT = YHAT, est = est, formula = fm))
+	# Set graph and data objects:
+	V(dag)$name<- paste0("z", V(dag)$name)
+	colnames(Z_train)<- paste0("z", colnames(Z_train))
+	colnames(Z_test)<- paste0("z", colnames(Z_test))
+	pe<- igraph::as_data_frame(dag)[,c(1,2)]
+	y<- split(pe, f=pe$to)
+	#y; length(y); names(y)
+	sigma<- NULL
+	#yhat<- NULL
+	YHAT<- NULL
+	est<- NULL
+	ml<- list()
+	fm<- list()
+
+	for (j in 1:length(y)) {
+	  #cat((j, ":", names(y)[j], "\n")
+	  message(j, ":", names(y)[j])
+	  Y <- names(y)[j]
+	  X <- y[[j]][,1]
+ 	  C <- paste(X, collapse = " + ")
+	  #f <- paste(Y,"~",X)
+	  f <- formula(paste(Y,"~",C))
+	  #pos <- 1
+	  envir <- as.environment(1)
+	  assign('f',f, envir = envir)
+
+	  # fitting the model to predict Y on X
+	  if (algo == "sem") {
+		#fit <- glm(eval(f), family="gaussian", data = data.frame(Z_train))
+		#fit <- glm(eval(f), family="binomial", data = data.frame(Z_train))
+		#if (vimp) vim <- (summary(fit)$coefficients[-1,3])^2
+	   	gf <- mapGraph(f=f)
+		fit<- quiet(SEMrun(gf, data.frame(Z_train), SE="none", limit=1000))
+		if (vimp) {
+		 vimx<- lavaan::parameterEstimates(fit$fit)[1:length(X),]
+		 vim <- unlist(vimx[,4]^2)
+		 names(vim) <- sub(".", "", unlist(vimx[,3]))
+		 vim <- as.numeric(vim[X])
+		}
+	  }
+	  if (algo == "gam") {
+		f <- formula(paste(Y,"~", paste("s(", X, ",bs='ps')", collapse="+")))
+		fit <- mgcv::gam(eval(f), data = data.frame(Z_train))
+	    if (vimp) vim <- as.numeric(summary(fit)$s.table[,3])
+	  }
+	  if (algo == "rf") {
+		fit <- ranger::ranger(eval(f),
+						data = Z_train,
+						num.trees = 500, #default
+						mtry = NULL,     #default
+						importance = "impurity")
+		if (vimp) vim <- as.numeric(ranger::importance(fit))
+	  } 
+	  if (algo == "xgb") {
+		xgb_train <- xgboost::xgb.DMatrix(data = as.matrix(Z_train[, X]),
+										  label = Z_train[, Y])
+		fit <- xgboost::xgboost(data = xgb_train,
+						booster = "gbtree",
+						tree_method = "auto",
+						max.depth = 6, #default
+						nrounds = 100, #niter
+						verbose = 0)   #silent																	
+		fit$feature_names <- X
+		vim <- 0
+		if (vimp == TRUE & length(X) > 1) {
+		 vimx<- xgboost::xgb.importance(model=fit)
+		 vim <- unlist(vimx[,2])
+		 names(vim) <- unlist(vimx[,1])
+		 vim <- as.numeric(vim[X])
+		}
+	  }
+	  if (algo == "nn") {
+		fit <- nnet::nnet(eval(f),
+						data = Z_train,
+						linout = TRUE,#FALSE default
+						size = 10,
+						decay = 5e-3,#0 default
+						maxit = 1000,#100 default
+						trace = FALSE,#default
+						MaxNWts = 5000)#1000 default
+		if (vimp) {
+		 vimx <- NeuralNetTools::olden(fit)$data
+		 vim <- vimx[,1]
+		 names(vim) <- vimx[,2]
+		 vim <- as.numeric(vim[X])
+		}
+	  }
+	  if (algo == "dnn") {
+		fit <- cito::dnn(eval(f),
+						#as.formula(f),
+						data = Z_train, 
+						loss = "mse",
+						hidden = 1000,
+						activation = "selu",
+						validation = 0,
+						bias = TRUE,
+						lambda = 0,
+						alpha = 0.5,
+						dropout = 0,
+						optimizer = "adam",
+						lr = 0.01,
+						epochs = 32,
+						plot = FALSE,
+						verbose = FALSE,
+						device = "cpu",
+						early_stopping = FALSE)
+		A <- matrix(rep(1, length(X)),ncol=1,
+					dimnames = list(X,Y))#A
+		if (vimp) vim <- as.numeric(getWeight(fit, A))
+	  }
+
+	if (vimp){
+	 estj <- data.frame(
+			 lhs = rep(gsub("z", "", Y), length(X)),
+			 op = "~",
+			 rhs = gsub("z", "", X),
+			 varImp = vim)
+	 est <- rbind(est, estj)
+	}
+	
+	#TRAIN predictions and prediction error (MSE)
+	if (algo == "rf"){
+	  #pred <- predict(fit, Z_test)$predictions
+	  PRED <- predict(fit, Z_train)$predictions
+	  #if (OOB) pred <- rf.fit$predictions
+	} else if (algo == "xgb"){
+	  #pred <- predict(fit, data.matrix(Z_test[, fit$feature_names]))
+	  PRED <- predict(fit, data.matrix(Z_train[, fit$feature_names]))
+	} else if (algo == "sem"){
+	  #pred <- predict(fit, data.frame(Z_test))
+	  z_train <- Z_train
+	  colnames(z_train) <- sub(".", "", colnames(z_train))
+	  V(fit$graph)$name <- sub(".", "", V(fit$graph)$name)
+	  PRED <- predict(fit, z_train)$Yhat
+	} else{
+	  #pred <- predict(fit, data.frame(Z_test))
+	  PRED <- predict(fit, data.frame(Z_train))
+	}
+	 pe <- mean((Z_train[,Y] - PRED)^2)
+	 sigma <- c(sigma, pe)
+	 ml <- c(ml, list(fit))
+	 fm <- c(fm, list(formula=f))
+	 #yhat <- cbind(yhat, pred)
+	 YHAT <- cbind(YHAT, PRED)
+	}
+
+	#colnames(yhat)<- sub(".", "", names(y))
+	colnames(YHAT)<- sub(".", "", names(y))
+	names(sigma) <- sub(".", "", names(y))
+	
+	return(list(ml = ml, sigma = sigma, YHAT = YHAT, est = est, formula = fm))
 }
 
 #' @title SEM-based out-of-sample prediction using node-wise ML
@@ -458,39 +475,43 @@ parameterEstimates.ML <- function(dag, Z_train, Z_test, algo, vimp, ...)
 
 predict.ML <- function(object, newdata, verbose=FALSE, ...)
 {
-  ml.fit <- object$model
-  ml <- c("lm", "gam", "ranger", "xgb.Booster", "nnet", "citodnn")
-  stopifnot(inherits(ml.fit[[1]], ml))
-  vp <- colnames(object$data)
-  mp <- apply(object$data, 2, mean)
-  sp <- apply(object$data, 2, sd)
-  Z_test <- scale(newdata[,vp], center=mp, scale=sp)
-  colnames(Z_test) <- paste0("z", "", colnames(Z_test))
-  
-  yhat <- NULL
-  yn <- c()
-  for (j in 1:length(ml.fit)) {
-    fit <- ml.fit[[j]]
-    vy <- all.vars(object$fit$formula[[j]])[1]
-    if (inherits(fit, "ranger")){
-      pred <- predict(fit, Z_test)$predictions
-    } else if (inherits(fit, "xgb.Booster")){
-      pred <- predict(fit, data.matrix(Z_test[,fit$feature_names]))
-    } else {
-      pred <- predict(fit, data.frame(Z_test))
-    }
-    yhat <- cbind(yhat, as.matrix(pred))
-    yn <- c(yn, vy)
-  }
-  
-  yobs<- Z_test[, yn]
-  PE<- colMeans((yobs - yhat)^2)
-  pe<- mean((yobs - yhat)^2)
-  colnames(yhat) <- gsub("z", "", yn)
-  names(PE) <- colnames(yhat)
-  if (verbose) print(c(amse=pe,PE))
-  
-  return(list(PE=c(amse=pe,PE), Yhat=yhat))
+	ml.fit <- object$model
+	ml <- c("SEM", "gam", "ranger", "xgb.Booster", "nnet", "citodnn")
+	stopifnot(inherits(ml.fit[[1]], ml))
+	vp <- colnames(object$data)
+	mp <- apply(object$data, 2, mean)
+	sp <- apply(object$data, 2, sd)
+	Z_test <- scale(newdata[,vp], center=mp, scale=sp)
+	colnames(Z_test) <- paste0("z", "", colnames(Z_test))
+
+	yhat <- NULL
+	yn <- c()
+	for (j in 1:length(ml.fit)) {
+	 fit <- ml.fit[[j]]
+	 vy <- all.vars(object$fit$formula[[j]])[1]
+	 if (inherits(fit, "ranger")){
+	  pred <- predict(fit, Z_test)$predictions
+	 } else if (inherits(fit, "xgb.Booster")){
+	  pred <- predict(fit, data.matrix(Z_test[,fit$feature_names]))
+	 } else if (inherits(fit, "SEM")){
+	  z_test <- Z_test
+	  colnames(z_test) <- sub(".", "", colnames(z_test))
+	  pred <- predict(fit, z_test)$Yhat
+	 } else {
+	  pred <- predict(fit, data.frame(Z_test))
+	 }
+	 yhat <- cbind(yhat, as.matrix(pred))
+	 yn <- c(yn, vy)
+	}
+
+	yobs<- Z_test[, yn]
+	PE<- colMeans((yobs - yhat)^2)
+	pe<- mean(PE)
+	colnames(yhat) <- sub(".", "", yn)
+	names(PE) <- colnames(yhat)
+	if (verbose) print(c(amse=pe,PE))
+	
+	return(list(PE=c(amse=pe,PE), Yhat=yhat))
 }
 
 #' @title Compute variable importance using Shapley (R2) values
@@ -604,159 +625,165 @@ predict.ML <- function(object, newdata, verbose=FALSE, ...)
 
 getShapleyR2<- function(object, newdata, thr = NULL, verbose = FALSE, ...)
 {
-  # extract data and model objects
-  model<- object$model
-  graph<- object$graph
-  formula<- object$fit$formula
-  vp <- colnames(object$data)
-  mp <- apply(object$data, 2, mean)
-  sp <- apply(object$data, 2, sd)
-  Z_train<- scale(object$data)
-  Z_test <- scale(newdata[,vp], center=mp, scale=sp)
-  colnames(Z_train)<- paste0("z", colnames(Z_train))
-  colnames(Z_test) <- paste0("z", "", colnames(Z_test))
-  est<- NULL
-  shapx<- list()
-  
-  pb <- txtProgressBar(min = 0, max = length(model), style = 3)
-  for (j in 1:length(model)) { #
-    fitj <- list(model[[j]],formula[[j]])
-    Wj <- shapR2(fitj, Z_train, Z_test)
-    vn <- all.vars(formula[[j]])
-    X <- gsub("z", "", vn[-1])
-    Y <- gsub("z", "", vn[1])
-    label<- data.frame(
-      lhs = rep(Y, length(X)),
-      op = "~",
-      rhs = X)
-    est <- rbind(est, cbind(label, Wj[[2]]))
-    shapx<- c(shapx, list(Wj[[1]]))
-    setTxtProgressBar(pb, j)
-  }
-  cat("\n")
-  rownames(est)<- NULL
-  colnames(est)[4]<- "sign_r2"
-  class(est)<- c("lavaan.data.frame","data.frame")
-  
-  df<- data.frame(est[,3],est[,1],weight=est[,4])
-  dag<- graph_from_data_frame(df)
-  if (is.null(thr)) thr = mean(abs(E(dag)$weight))
-  dag<- colorDAG(dag, thr=thr, verbose=verbose)
-  
-  return(list(est = est, dag = dag, shapx = shapx))
+	# extract data and model objects
+	model<- object$model
+	graph<- object$graph
+	formula<- object$fit$formula
+	vp <- colnames(object$data)
+	mp <- apply(object$data, 2, mean)
+	sp <- apply(object$data, 2, sd)
+	Z_train<- scale(object$data)
+	Z_test <- scale(newdata[,vp], center=mp, scale=sp)
+	colnames(Z_train)<- paste0("z", colnames(Z_train))
+	colnames(Z_test) <- paste0("z", "", colnames(Z_test))
+	est<- NULL
+	shapx<- list()
+
+	pb <- txtProgressBar(min = 0, max = length(model), style = 3)
+	for (j in 1:length(model)) { #j=158
+	  fitj <- list(model[[j]],formula[[j]])
+	  Wj <- shapR2(fitj, Z_train, Z_test)
+	  vn <- all.vars(formula[[j]])
+	  X <- sub(".", "", vn[-1])
+	  Y <- sub(".", "", vn[1])
+	  label<- data.frame(
+				lhs = rep(Y, length(X)),
+				op = "~",
+				rhs = X)
+	  est <- rbind(est, cbind(label, Wj[[2]]))
+	  shapx<- c(shapx, list(Wj[[1]]))
+	  setTxtProgressBar(pb, j)
+	}
+	close(pb)
+	rownames(est)<- NULL
+	colnames(est)[4]<- "sign_r2"
+	class(est)<- c("lavaan.data.frame","data.frame")
+
+	df<- data.frame(est[,3],est[,1],weight=est[,4])
+	dag<- graph_from_data_frame(df)
+	if (is.null(thr)) thr = mean(abs(E(dag)$weight))
+	dag<- colorDAG(dag, thr=thr, verbose=verbose)
+
+	return(list(est = est, dag = dag, shapx = shapx))
 }
 
 shapR2<- function(fitj, Z_train, Z_test, ...)
 {
-  # Extract fitting 
-  fit <- fitj[[1]]
-  formula <- fitj[[2]]
-  vf <- all.vars(formula)
-  z_train <- data.frame(Z_train[ ,vf])
-  z_test <- data.frame(Z_test[ ,vf])
-  
-  # Extract sign of beta coefficients from lm(Y on X)
-  f0 <- paste(vf[1],"~", paste(vf[-1], collapse = " + "))
-  fit0 <- lm(f0, data = data.frame(z_train))
-  s <- sign(coefficients(fit0))[-1]
-  p0 <- mean(z_train[,1])
-  
-  if (inherits(fit, "nnet")) {
-    predict_model.nnet.formula <- function(x, newdata) {
-      predict(x, newdata, type = "raw")
+	# Extract fitting objects
+	fit <- fitj[[1]]
+	formula <- fitj[[2]]
+	vf <- all.vars(formula)
+	z_train <- data.frame(Z_train[ ,vf])
+	z_test <- data.frame(Z_test[ ,vf])
+	if (nrow(z_train) < ncol(z_train)) {
+      stop("Currently n < p, fewer samples than features, is not supported!")
     }
-    #pos <- 1
-    envir <- as.environment(1)
-    assign("predict_model.nnet.formula", predict_model.nnet.formula, envir = envir)
-  }
-  if (inherits(fit, "citodnn")) {
-    predict_model.citodnn <- function(x, newdata) {
-      predict(x, newdata, type = "response")
-    }
-    #pos <- 1
-    envir <- as.environment(1)
-    assign("predict_model.citodnn", predict_model.citodnn, envir = envir)
-  }
-  
-  # Extract shapley data.table (data.frame)
-  if (length(vf) != 2) {  
-    explainer <- quiet(shapr::shapr(z_train[,-1], fit,
-                                    n_combinations = 1000))
-    explanation <- quiet(shapr::explain(z_test,
-                                        explainer = explainer,
-                                        approach = "empirical",
-                                        prediction_zero = p0,
-                                        n_combinations = 1000))
-    shapx <- data.frame(explanation$dt)[,-1]
-    #shapm <- s * apply(shapx, 2, function(x) mean(abs(x)))
-    shapr2 <- s * r2(shapx, z_test[,1], p0, scale="r2")[,3]
-  } else {
-    if (inherits(fit, "ranger")){
-      shapx <- predict(fit, z_test)$predictions - p0
-    } else if (inherits(fit, "xgb.Booster")){
-      shapx <- predict(fit, data.matrix(z_test[, fit$feature_names])) - p0
-    } else {
-      shapx <- predict(fit, data.frame(z_test)) - p0
-    }
-    #shapm <- s * mean(abs(shapx))
-    shapr2 <- s * min(sum(shapx^2)/sum((z_test[,1] - p0)^2),1)
-  }
-  
-  return(list(shapx = shapx, shapr2 = shapr2))
+		
+	# Extract sign of beta coefficients from lm(Y on X)
+	f0 <- paste(vf[1],"~", paste(vf[-1], collapse = " + "))
+	fit0 <- lm(f0, data = data.frame(z_train))
+	s <- sign(coefficients(fit0))[-1]
+	p0 <- mean(z_train[,1])
+	
+	if (inherits(fit, "nnet")) {
+	  predict_model.nnet.formula <- function(x, newdata) {
+		predict(x, newdata, type = "raw")
+	  }
+	  #pos <- 1
+	  envir <- as.environment(1)
+	  assign("predict_model.nnet.formula", predict_model.nnet.formula, envir = envir)
+ 	}
+	if (inherits(fit, "citodnn")) {
+	  predict_model.citodnn <- function(x, newdata) {
+		predict(x, newdata, type = "response")
+	  }
+	  #pos <- 1
+	  envir <- as.environment(1)
+	  assign("predict_model.citodnn", predict_model.citodnn, envir = envir)
+ 	}
+	if (inherits(fit, "SEM")) {
+	 fit <- lm(formula, data=data.frame(z_train))
+ 	}
+
+	# Extract shapley data.table (data.frame)
+	if (length(vf) != 2) {  
+	 explainer <- quiet(shapr::shapr(z_train[,-1], fit,
+						n_combinations = 1000))
+	 explanation <- quiet(shapr::explain(z_test,
+										explainer = explainer,
+										approach = "empirical",
+										prediction_zero = p0,
+										n_combinations = 1000))
+	 shapx <- data.frame(explanation$dt)[,-1]
+	 #shapm <- s * apply(shapx, 2, function(x) mean(abs(x)))
+	 shapr2 <- s * r2(shapx, z_test[,1], p0, scale="r2")[,3]
+	} else {
+	 if (inherits(fit, "ranger")){
+	  shapx <- predict(fit, z_test)$predictions - p0
+	 } else if (inherits(fit, "xgb.Booster")){
+	  shapx <- predict(fit, data.matrix(z_test[, fit$feature_names])) - p0
+	 } else {
+	  shapx <- predict(fit, data.frame(z_test)) - p0
+	 }
+	 #shapm <- s * mean(abs(shapx))
+	 shapr2 <- s * min(sum(shapx^2)/sum((z_test[,1] - p0)^2),1)
+	}
+
+	return(list(shapx = shapx, shapr2 = shapr2))
 }
 
 r2 <- function(shap, y, intercept, scale = c("r2", "1")) 
 {
-  shap <- as.data.frame(shap, drop = FALSE)
-  scale <- scale[1]
-  y <- as.vector(y)
-  y_pred <- base::rowSums(shap, na.rm = TRUE) + intercept
-  y_pred_var <- stats::var(y_pred)
-  error_var <- stats::var(y - y_pred)
-  r2 <- y_pred_var/(y_pred_var + error_var)
+	shap <- as.data.frame(shap, drop = FALSE)
+	scale <- scale[1]
+	y <- as.vector(y)
+	y_pred <- base::rowSums(shap, na.rm = TRUE) + intercept
+	y_pred_var <- stats::var(y_pred)
+	error_var <- stats::var(y - y_pred)
+	r2 <- y_pred_var/(y_pred_var + error_var)
+	
+	data <- reshape(shap, varying = colnames(shap), timevar = "feature", 
+					v.names = "shap_effect", direction = "long")[,-3]
+	data$feature <- rep(colnames(shap), each=nrow(shap))
+	rownames(data) <- NULL
+	data$y <- as.vector(y)
+	data$y_pred <- y_pred
+	data$error <- data$y - data$y_pred
+	y_pred_shap <- data$y_pred - data$shap_effect
+	data$y_pred_shap <- y_pred_shap
+	data$error_var <- error_var
+	data$r2 <- r2
+	data_r2_all <- c()
+	data_sigma_all <- c()
   
-  data <- reshape(shap, varying = colnames(shap), timevar = "feature", 
-                  v.names = "shap_effect", direction = "long")[,-3]
-  data$feature <- rep(colnames(shap), each=nrow(shap))
-  rownames(data) <- NULL
-  data$y <- as.vector(y)
-  data$y_pred <- y_pred
-  data$error <- data$y - data$y_pred
-  y_pred_shap <- data$y_pred - data$shap_effect
-  data$y_pred_shap <- y_pred_shap
-  data$error_var <- error_var
-  data$r2 <- r2
-  data_r2_all <- c()
-  data_sigma_all <- c()
-  
-  for (i in colnames(shap)){
-    data_r2 <- data[data$feature == i, ] 
-    data_r2$error_var_shap <- stats::var(data_r2$y - data_r2$y_pred_shap)
-    data_r2$error_ratio <- base::min(data_r2$error_var/data_r2$error_var_shap, 1, na.rm = TRUE)
-    data_r2_all <- rbind(data_r2_all, data_r2[1,])    
-    
-    data_sigma <- data[data$feature == i, ]
-    data_sigma$error_var_shap <- stats::var(data_sigma$y - data_sigma$y_pred_shap)
-    data_sigma_all <- rbind(data_sigma_all, data_sigma[1,c(1,9)])
-  }
-  
-  if ((base::sum(data_r2_all$r2 - data_r2_all$error_ratio * data_r2_all$r2)) == 0){
-    data_r2_all$r2_shap <- ((data_r2_all$r2 - data_r2_all$error_ratio * data_r2_all$r2)/1e-10)
-  }else{
-    data_r2_all$r2_shap <- ((data_r2_all$r2 - data_r2_all$error_ratio * data_r2_all$r2)/
-                              (base::sum(data_r2_all$r2 - data_r2_all$error_ratio * data_r2_all$r2)))
-  }
-  
-  error_var_shap <- sum(data_sigma_all$error_var_shap, na.rm = TRUE)
-  var_ratio <- sum(error_var_shap - error_var, na.rm = TRUE)/
-    (stats::var(y - intercept, na.rm = TRUE) - error_var)
-  
-  if (scale == "r2") {
-    data_r2_all$r2_shap <- data_r2_all$r2_shap * data_r2_all$r2
-  }
-  
-  data_r2_all$sigma_unique <- var_ratio
-  data <- as.data.frame(data_r2_all[, c("feature", "r2", "r2_shap", "sigma_unique")])
-  
-  return(data)
+	for (i in colnames(shap)){
+	 data_r2 <- data[data$feature == i, ] 
+	 data_r2$error_var_shap <- stats::var(data_r2$y - data_r2$y_pred_shap)
+	 data_r2$error_ratio <- base::min(data_r2$error_var/data_r2$error_var_shap, 1, na.rm = TRUE)
+	 data_r2_all <- rbind(data_r2_all, data_r2[1,])    
+	
+	 data_sigma <- data[data$feature == i, ]
+	 data_sigma$error_var_shap <- stats::var(data_sigma$y - data_sigma$y_pred_shap)
+	 data_sigma_all <- rbind(data_sigma_all, data_sigma[1,c(1,9)])
+	}
+	
+	if ((base::sum(data_r2_all$r2 - data_r2_all$error_ratio * data_r2_all$r2)) == 0){
+	 data_r2_all$r2_shap <- ((data_r2_all$r2 - data_r2_all$error_ratio * data_r2_all$r2)/1e-10)
+	}else{
+	 data_r2_all$r2_shap <- ((data_r2_all$r2 - data_r2_all$error_ratio * data_r2_all$r2)/
+							(base::sum(data_r2_all$r2 - data_r2_all$error_ratio * data_r2_all$r2)))
+	}
+	
+	error_var_shap <- sum(data_sigma_all$error_var_shap, na.rm = TRUE)
+	var_ratio <- sum(error_var_shap - error_var, na.rm = TRUE)/
+					(stats::var(y - intercept, na.rm = TRUE) - error_var)
+	
+	if (scale == "r2") {
+	 data_r2_all$r2_shap <- data_r2_all$r2_shap * data_r2_all$r2
+	}
+	
+	data_r2_all$sigma_unique <- var_ratio
+	data <- as.data.frame(data_r2_all[, c("feature", "r2", "r2_shap", "sigma_unique")])
+	
+	return(data)
 }

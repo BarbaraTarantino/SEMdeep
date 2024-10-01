@@ -7,7 +7,7 @@
 benchmark(yobs, yhat, CT = NULL, thr = 0, F1 = TRUE, verbose = FALSE, ...)
 }
 \arguments{
-\item{yobs}{A binary vector with the true target variable values.}
+\item{yobs}{A binary (0,1) vector with the true target variable values.}
 
 \item{yhat}{A continuous vector with the predicted target variable values.}
 
@@ -15,9 +15,9 @@ benchmark(yobs, yhat, CT = NULL, thr = 0, F1 = TRUE, verbose = FALSE, ...)
 for FP, TP, TN, and FN.}
 
 \item{thr}{A numerical value indicating the threshold for converting the
-\code{yhat} continuous vector to a binary vector. If \code{yhat} vector 
-ranges between -1 and 1, the user can specify \code{thr = 0} (default); 
-if \code{yhat} ranges between 0 and 1, the user can specify \code{thr = 0.5}.}
+\code{yhat} continuous vector to a binary vector (default: \code{thr = 0});
+if the user sets \code{thr = 0.5}, the \code{yhat} is transformed into a
+probability by the logistic function, exp(\code{yhat})/(1 + exp(\code{yhat})).}
 
 \item{F1}{A logical value. If TRUE (default), precision (pre), recall (rec),
 f1 and mcc will be computed. Otherwise, if FALSE, specificity (sp),
@@ -86,9 +86,9 @@ ypred<- ifelse(yhat < 0, 0, 1)
 benchmark(CT=table(yobs, ypred), F1=TRUE)
 
 #...with density plots of yhat per group
-old.par <- par(no.readonly = TRUE)
+#old.par <- par(no.readonly = TRUE)
 benchmark(yobs, yhat, thr=0, F1=FALSE, verbose = TRUE)
-on.exit(par(old.par))
+#par(old.par)
 }
 
 }

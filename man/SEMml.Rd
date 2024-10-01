@@ -57,14 +57,15 @@ An S3 object of class "ML" is returned. It is a list of 5 objects:
 \item "fit", a list of ML model objects, including: the estimated covariance 
 matrix (Sigma),  the estimated model errors (Psi), the fitting indices (fitIdx),
 and the signed Shapley R2 values (parameterEstimates), if shap = TRUE,
-\item "Yhat", a matrix of predictions of sink and mediator graph nodes. 
+\item "Yhat", the matrix of continuous predicted values of graph nodes  
+(excluding source nodes) based on training samples. 
 \item "model", a list of all the fitted nodewise-based models 
 (sem, gam, rf, xgb or nn).
 \item "graph", the induced DAG of the input graph  mapped on data variables. 
 If vimp = TRUE, the DAG is colored based on the variable importance measure,
 i.e., if abs(vimp) > thr will be highlighted in red (vimp > 0) or blue
 (vimp < 0). 
-\item "data", input training data subset mapping graph nodes. 
+\item "data", training data subset mapping graph nodes. 
 }
 }
 \description{
