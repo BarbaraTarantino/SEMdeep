@@ -707,15 +707,16 @@ shapR2<- function(fitj, Z_train, Z_test, ...)
 
 	# Extract shapley data.table (data.frame)
 	if (length(vf) != 2) {  
-	 explainer <- quiet(shapr::shapr(z_train[,-1], fit,
-						n_combinations = 1000))
-	 explanation <- quiet(shapr::explain(z_test,
-										explainer = explainer,
-										approach = "empirical",
-										prediction_zero = p0,
-										n_combinations = 1000))
-	 shapx <- data.frame(explanation$dt)[,-1]
-	 #shapm <- s * apply(shapx, 2, function(x) mean(abs(x)))
+	  explanation <- quiet(shapr::explain(model = fit,
+	                                      x_train = z_train[,-1],
+	                                      x_explain = z_test[,-1],
+	                                      approach = "empirical",
+	                                      phi0 = p0,
+	                                      max_n_coalitions = 100,
+	                                      iterative = FALSE,
+	                                      verbose = NULL))
+	  shapx <- data.frame(explanation$shapley_values_est)[,-c(1,2)]
+	  #shapm <- s * apply(shapx, 2, function(x) mean(abs(x)))
 	 shapr2 <- s * r2(shapx, z_test[,1], p0, scale="r2")[,3]
 	} else {
 	 if (inherits(fit, "ranger")){
