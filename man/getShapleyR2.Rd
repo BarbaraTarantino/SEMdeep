@@ -4,13 +4,24 @@
 \alias{getShapleyR2}
 \title{Compute variable importance using Shapley (R2) values}
 \usage{
-getShapleyR2(object, newdata, thr = NULL, verbose = FALSE, ...)
+getShapleyR2(
+  object,
+  newdata,
+  newoutcome = NULL,
+  thr = NULL,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
-\item{object}{A model fitting object from \code{SEMml()} function.}
+\item{object}{A model fitting object from \code{SEMml()}, \code{SEMdnn()} or
+\code{SEMrun()} functions.}
 
-\item{newdata}{A matrix containing new data with rows corresponding to
-subjects, and columns to variables.}
+\item{newdata}{A matrix containing new data with rows corresponding to subjects,
+and columns to variables.}
+
+\item{newoutcome}{A new character vector (as.factor) of labels for a categorical
+output (target)(default = NULL).}
 
 \item{thr}{A threshold value to apply to signed Shapley (R2) values. If
 thr=NULL (default), the threshold is set to thr=mean(Shapley(R2) values)).}
@@ -21,11 +32,15 @@ graph will not be plotted to screen.}
 \item{...}{Currently ignored.}
 }
 \value{
-A list od three object: (i) data.frame including the connections
-together with their signed Shapley R-squred values; (ii) the dag with
-colored edges, if abs(sign_R2) > thr will be highlighted in red (sign_R2 > 0)
-or blue (sign_R2 < 0); and (ii) the list of individual Shapley values of
-predictors variables per each response variable.
+A list od three object: (i) est: a data.frame including the connections
+together with their signed Shapley R-squred values; (ii) shapx: the list of
+individual Shapley values of predictors variables per each response variable,
+and (iii) dag: the DAG with colored edges. If abs(sign_r2) > thr and sign_r2 < 0,
+the edge is inhibited and it is highlighted in blue; otherwise, if abs(sign_r2)
+> thr and sign_r2 > 0, the edge is activated and it is highlighted in red. If
+the outcome vector is given, nodes with absolute connection weights summed over
+the outcome levels, i.e. sum(abs(sign_r2[outcome levels])) > thr, will be
+highlighted in pink.
 }
 \description{
 This function computes variable contributions for individual
@@ -55,19 +70,15 @@ indicate node regulation (activation, if positive; inhibition, if
 negative). This has been recovered for each edge using sign(beta), i.e.,
 the sign of the coefficient estimates from a linear model (lm) fitting
 of the output node on the input nodes, as suggested by Joseph (2019).
-It should be noted that in order to ascertain the local significance
-of node regulation with respect to the DAG, the Shapley decomposition
-of the R-squared (R2) value can be employed for each outcome node
-(r=1,...,R) by averaging the R2 indices of their input nodes.
-
-The Shapley values are computed using the \pkg{shapr} package that implements
-an extended version of the Kernel SHAP method for approximating Shapley values
-in which dependence between the features is taken into account. 
-The operations necessary to compute kernel SHAP values are inherently
-time-consuming, with the computational time increasing in proportion to
-the number of predictor variables and the number of observations.
-Therefore, the function uses a progress bar to check the progress
-of the kernel SHAP evaluation per observation.
+In order to ascertain the local significance of node regulation with respect
+to the DAG, the Shapley decomposition of the R-squared (R2) value can be
+employed for each outcome node (r=1,...,R) by averaging the R2 indices of
+their input nodes.
+Finally, It should be noted that the operations required to compute kernel SHAP
+values are inherently time-consuming, with the computational time increasing
+in proportion to the number of predictor variables and the number of observations.
+Therefore, the function uses a progress bar to check the progress of the kernel
+SHAP evaluation per observation.
 }
 \examples{
 
@@ -81,19 +92,16 @@ data<- transformData(data)$data
 set.seed(123)
 train<- sample(1:nrow(data), 0.5*nrow(data))
 
-rf0<- SEMml(ig, data, train=train, algo="rf", vimp=FALSE)
+rf0<- SEMml(ig, data[train, ], algo="rf", vimp=FALSE)
 
 res<- getShapleyR2(rf0, data[-train, ], thr=NULL, verbose=TRUE)
 table(E(res$dag)$color)
 
-# average shapley R2 across response variables
+# shapley R2 per response variables
 R2<- abs(res$est[,4])
 Y<- res$est[,1]
-R2Y<- aggregate(R2~Y,data=data.frame(R2,Y),FUN="mean")
-PE<- predict(rf0, data[-train, ])$PE
-cbind(R2Y=R2Y[,2],PEY=PE[-1])
-mean(R2) # total average R2
-PE[1]    # total MSE
+R2Y<- aggregate(R2~Y,data=data.frame(R2,Y),FUN="sum");R2Y
+r2<- mean(R2);r2 # shapley R2 threshold if thr = NULL
 }
 
 }

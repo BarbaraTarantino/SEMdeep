@@ -7,23 +7,24 @@
 SEMdnn(
   graph,
   data,
-  train = NULL,
-  cowt = FALSE,
+  outcome = NULL,
+  cowt = TRUE,
   thr = NULL,
-  loss = "mse",
   hidden = c(10L, 10L, 10L),
   link = "relu",
-  validation = 0,
   bias = TRUE,
+  dropout = 0,
+  loss = "mse",
+  validation = 0,
   lambda = 0,
   alpha = 0.5,
-  dropout = 0,
   optimizer = "adam",
   lr = 0.01,
   epochs = 100,
   device = "cpu",
+  ncores = 2,
   early_stopping = FALSE,
-  verbose = TRUE,
+  verbose = FALSE,
   ...
 )
 }
@@ -33,52 +34,51 @@ SEMdnn(
 \item{data}{A matrix with rows corresponding to subjects, and columns
 to graph nodes (variables).}
 
-\item{train}{A numeric vector specifying the row indices corresponding to 
-the train dataset.}
+\item{outcome}{A character vector (as.factor) of labels for a categorical
+output (target). If NULL (default), the categorical output (target) will
+not be considered.}
 
-\item{cowt}{A logical value. If \code{cowt=TRUE} connection weights of the
-input node (variables) are computing (default = FALSE).}
+\item{cowt}{A logical value (default = TRUE). Compute the Olden's connection
+weights of the input node (variables), expressed relative to the maximum.}
 
 \item{thr}{A numerical value indicating the threshold to apply on the absolute
-values of the connection matrix to color the graph (default = NULL).}
-
-\item{loss}{A character value specifying the loss after which network should 
-be optimized. The user can specify: (a) "mse" (mean squared error), "mae" 
-(mean absolute error), or "gaussian" (normal likelihood), for regression problems; 
-(b) "poisson" (poisson likelihood), or "nbinom" (negative binomial likelihood)
-for regression with count data; (c) "binomial" (binomial likelihood) for 
-binary classification problems; (d) "softmax" or "cross-entropy" for multi-class
-classification (default = "mse").}
+values of the connection matrix to color the graph. If thr=NULL (default), the
+threshold is set to thr = abs(mean(cowt)).}
 
 \item{hidden}{hidden units in layers; the number of layers corresponds with
-the length of the hidden units. As a default, \code{hidden = c(10L, 10L, 10L)}.}
+the length of the hidden units. As a default, hidden = c(10L, 10L, 10L).}
 
 \item{link}{A character value describing the activation function to use, which 
 might be a single length or be a vector with many activation functions assigned
-to each layer (default = "relu").}
+to each layer. As a default, link = "selu".}
+
+\item{bias}{A logical vector, indicating whether to employ biases in the layers, 
+which can be either vectors of logicals for each layer (number of hidden layers
++ 1 (final layer)) or of length one.  As a default, bias = TRUE.}
+
+\item{dropout}{A numerical value for the dropout rate, which is the probability
+that a node will be excluded from training.  As a default, dropout = 0.}
+
+\item{loss}{A character value specifying the at which the network should 
+be optimized. For regression problem used in SEMdnn(), the user can specify:
+(a) "mse" (mean squared error), "mae" (mean absolute error), or "gaussian"
+(normal likelihood). As a default, loss = "mse".}
 
 \item{validation}{A numerical value indicating the proportion of the data set 
 that should be used as a validation set (randomly selected, default = 0).}
 
-\item{bias}{A logical vector, indicating whether to employ biases in the layers 
-(\code{bias = TRUE}), which can be either vectors of logicals for each layer 
-(number of hidden layers + 1 (final layer)) or of length one (default = TRUE).}
-
-\item{lambda}{A numerical value indicating the strength of regularization: 
-lambda penalty, \eqn{\lambda * (L1 + L2)} (default = 0).}
+\item{lambda}{A numerical value indicating the strength of the regularization for 
+lambda penalty, \eqn{\lambda (L1 + L2)} (default = 0).}
 
 \item{alpha}{A numerical vector to add L1/L2 regularization into the training. 
-Set the alpha parameter for each layer to \eqn{(1 - \alpha) * ||weights||_1 + 
-\alpha ||weights||^2}. It must fall between 0 and 1 (default = 0.5).}
-
-\item{dropout}{A numerical value for the dropout rate, which is the probability
-that a node will be excluded from training (default = 0).}
+Set the alpha parameter for each layer to \eqn{(1 - \alpha) L1 + \alpha L2}. 
+It must fall between 0 and 1 (default = 0.5).}
 
 \item{optimizer}{A character value indicating the optimizer to use for 
 training the network. The user can specify: "adam" (ADAM algorithm), "adagrad"
 (adaptive gradient algorithm), "rmsprop" (root mean squared propagation),
 "rprop” (resilient backpropagation), "sgd" (stochastic gradient descent).
-As a default, \code{optimizer = “adam”}.}
+As a default, optimizer = "adam".}
 
 \item{lr}{A numerical value indicating the learning rate given to the optimizer 
 (default = 0.01).}
@@ -87,15 +87,16 @@ As a default, \code{optimizer = “adam”}.}
 is conducted (default = 100).}
 
 \item{device}{A character value describing the CPU/GPU device ("cpu", "cuda", "mps")
-on which the  neural network should be trained on (default = "cpu")}
+on which the  neural network should be trained on. As a default, device = "cpu".}
+
+\item{ncores}{number of cpu cores (default = 2)}
 
 \item{early_stopping}{If set to integer, training will terminate if the loss 
 increases over a predetermined number of consecutive epochs and apply validation
 loss when available. Default is FALSE, no early stopping is applied.}
 
-\item{verbose}{If \code{verbose = TRUE}, the training curves of the DNN models
-are displayed as output, comparing the training, validation and baseline 
-curves in terms of loss (y) against the number of epochs (x) (default = TRUE).}
+\item{verbose}{The training loss values of the DNN model are displayed as output,
+comparing the training, validation and baseline in the last epoch (default = FALSE).}
 
 \item{...}{Currently ignored.}
 }
@@ -104,16 +105,18 @@ An S3 object of class "DNN" is returned. It is a list of 5 objects:
 \enumerate{
 \item "fit", a list of DNN model objects, including: the estimated covariance 
 matrix (Sigma), the estimated model errors (Psi), the fitting indices (fitIdx),
-and the estimated connection weights (parameterEstimates), if cowt=TRUE.
-\item "Yhat", the matrix of continuous predicted values of graph nodes  
-(excluding source nodes) based on training samples. 
+and the data.frame of estimated connection weights (parameterEstimates), if cowt=TRUE.
+\item "gest", the data.frame of estimated connection weights (parameterEstimates)
+of outcome levels, if cowt = TRUE and outcome != NULL.
 \item "model", a list of all j=1,...,(L-1) fitted MLP network models.
 \item "graph", the induced DAG of the input graph mapped on data variables.
 If cowt=TRUE, the DAG is colored based on the estimated connection weights, if
 abs(W) > thr and W < 0,  the edge is inhibited and it is highlighted in blue;
 otherwise, if abs(W) > thr and W > 0, the edge is activated and it is highlighted
-in red. 
-\item "data", training data subset mapping graph nodes.
+in red. If the outcome vector is given, nodes with absolute connection weights
+summed over the outcome levels, i.e. sum(abs(W[outcome levels])) > thr, will be
+highlighted in pink.
+\item "data", input data subset mapping graph nodes.
 }
 }
 \description{
@@ -166,70 +169,64 @@ group<- alsData$group
 #...with train-test (0.5-0.5) samples
 set.seed(123)
 train<- sample(1:nrow(data), 0.5*nrow(data))
+#ncores<- parallel::detectCores(logical = FALSE)
 
 start<- Sys.time()
-dnn0 <- SEMdnn(ig, data, train, cowt = TRUE, thr = NULL,
-			#loss = "mse", hidden = 5*K, link = "selu",
-			loss = "mse", hidden = c(10, 10, 10), link = "selu",
-			validation = 0, bias = TRUE, lr = 0.01,
-			epochs = 32, device = "cpu", verbose = TRUE)
+dnn0<- SEMdnn(ig, data[train, ], cowt = TRUE, thr = NULL,
+			#hidden = 5*K, link = "selu", bias = TRUE,
+			hidden = c(10,10,10), link = "selu", bias = TRUE,
+			validation = 0, epochs = 32, ncores = 2)
 end<- Sys.time()
 print(end-start)
 
 #str(dnn0, max.level=2)
 dnn0$fit$fitIdx
-dnn0$fit$parameterEstimates
+parameterEstimates(dnn0$fit)
 gplot(dnn0$graph)
 table(E(dnn0$graph)$color)
 
-#...with a binary outcome (1=case, 0=control)
-
-ig1<- mapGraph(ig, type="outcome"); gplot(ig1)
-outcome<- ifelse(group == 0, -1, 1); table(outcome)
-data1<- cbind(outcome, data); data1[1:5,1:5]
-
-start<- Sys.time()
-dnn1 <- SEMdnn(ig1, data1, train, cowt = TRUE, thr = NULL,
-			#loss = "mse", hidden = 5*K, link = "selu",
-			loss = "mse", hidden = c(10, 10, 10), link = "selu",
-			validation = 0, bias = TRUE, lr = 0.01,
-			epochs = 32, device = "cpu", verbose = TRUE)
-end<- Sys.time()
-print(end-start)
-
-#str(dnn1, max.level=2)
-dnn1$fit$fitIdx
-dnn1$fit$parameterEstimates
-gplot(dnn1$graph) 
-table(E(dnn1$graph)$color)
-
-#...with input -> hidden structure -> output :
-# source nodes -> graph layer structure -> sink nodes
+#...with source nodes -> graph layer structure -> sink nodes
 
 #Topological layer (TL) ordering
 K<- c(12,  5,  3,  2,  1,  8)
 K<- rev(K[-c(1,length(K))]);K
 
-ig2<- mapGraph(ig, type="source"); gplot(ig2)
+ig1<- mapGraph(ig, type="source"); gplot(ig1)
 
 start<- Sys.time()
-dnn2 <- SEMdnn(ig2, data, train, cowt = TRUE, thr = NULL,
-			loss = "mse", hidden = 5*K, link = "selu",
-			#loss = "mse", hidden = c(10, 10, 10), link = "selu",
-			validation = 0, bias = TRUE, lr = 0.01,
-			epochs = 32, device = "cpu", verbose = TRUE)
+dnn1<- SEMdnn(ig1, data[train, ], cowt = TRUE, thr = NULL,
+			hidden = 5*K, link = "selu", bias = TRUE,
+		validation = 0, epochs = 32, ncores = 2)
 end<- Sys.time()
 print(end-start)
 
 #Visualization of the neural network structure
-nplot(dnn2$model[[1]], bias=FALSE)
+nplot(dnn1$model[[1]], bias=FALSE)
+
+#str(dnn1, max.level=2)
+dnn1$fit$fitIdx
+mean(dnn1$fit$Psi)
+parameterEstimates(dnn1$fit)
+gplot(dnn1$graph)
+table(E(dnn1$graph)$color)
+
+#...with a categorical outcome, a train set (0.5) and a validation set (0.2)
+outcome<- factor(ifelse(group == 0, "control", "case")); table(outcome) 
+
+start<- Sys.time()
+dnn2<- SEMdnn(ig, data[train, ], outcome[train], cowt = TRUE, thr = NULL,
+			#hidden = 5*K, link = "selu", bias = TRUE,
+			hidden = c(10,10,10), link = "selu", bias = TRUE,
+			validation = 0.2, epochs = 32, ncores = 2)
+end<- Sys.time()
+print(end-start)
 
 #str(dnn2, max.level=2)
 dnn2$fit$fitIdx
-mean(dnn2$fit$Psi)
-dnn2$fit$parameterEstimates
-gplot(dnn2$graph)
+parameterEstimates(dnn2$fit)
+gplot(dnn2$graph) 
 table(E(dnn2$graph)$color)
+table(V(dnn2$graph)$color)
 }
 }
 

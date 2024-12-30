@@ -23,3 +23,7 @@ Author: Mario Grassi [aut],
 Maintainer: Barbara Tarantino <barbara.tarantino01@universitadipavia.it>
 Repository: CRAN
 Packaged: 2024-09-30 13:33:21 UTC; mario
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

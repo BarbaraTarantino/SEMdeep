@@ -4,16 +4,17 @@
 \alias{predict.SEM}
 \title{SEM-based out-of-sample prediction using layer-wise ordering}
 \usage{
-\method{predict}{SEM}(object, newdata, verbose = FALSE, ...)
+\method{predict}{SEM}(object, newdata, newoutcome = NULL, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{An object, as that created by the function \code{SEMrun()}
-with the argument \code{fit} set to \code{fit = 0} or \code{fit = 1}.}
+with the argument \code{group} set to the default \code{group = NULL}.}
 
 \item{newdata}{A matrix with new data, with rows corresponding to subjects,
-and columns to variables. If \code{object$fit} is a model with the group
-variable (\code{fit = 1}), the first column of newdata must be the new
-group binary vector (0=control, 1=case).}
+and columns to variables.}
+
+\item{newoutcome}{A new character vector (as.factor) of labels for a categorical
+output (target)(default = NULL).}
 
 \item{verbose}{A logical value. If FALSE (default), the processed graph 
 will not be plotted to screen.}
@@ -21,11 +22,13 @@ will not be plotted to screen.}
 \item{...}{Currently ignored.}
 }
 \value{
-A list of 2 objects:
+A list of 3 objects:
 \enumerate{
-\item "PE", vector of the prediction error equal to the Mean Squared Error
-(MSE) for each out-of-bag prediction. The first value of PE is the AMSE,
-where we average over all (sink and mediators) graph nodes.
+\item "PE", vector of the amse = average MSE over all (sink and mediators)
+graph nodes; r2 = 1 - amse; and srmr= Standardized Root Means Square Residual
+between the out-of-bag correlation matrix and the model correlation matrix.
+\item "mse", vector of the Mean Squared Error (MSE) for each out-of-bag
+prediction of the sink and mediators graph nodes.
 \item "Yhat", the matrix of continuous predicted values of graph nodes  
 (excluding source nodes) based on out-of-bag samples. 
 }
@@ -42,9 +45,10 @@ layers act as predictors x.
 The function first creates a layer-based structure of the
 input graph. Then, a SEM-based predictive approach (Rooij et al., 2022) 
 is used to produce predictions while accounting for the graph structure
-organised in topological layers, j=1,...,L. In each iteration, the response
-variables y are the nodes in the j layer and the predictors x are the nodes
-belonging to the previous j-1 layers. 
+based on the topological layer (j=1,…,L) of the input graph. In each iteration,
+the response (output) variables, y are the nodes in the j=1,...,(L-1) layer and
+the predictor (input) variables, x are the nodes belonging to the successive,
+(j+1),...,L layers.
 Predictions (for y given x) are based on the (joint y and x) model-implied 
 variance-covariance (Sigma) matrix and mean vector (Mu) of the fitted SEM,
 and the standard expression for the conditional mean of a multivariate normal
@@ -54,7 +58,6 @@ consideration, which differs from ordinary least squares (OLS) regression.
 \examples{
 
 # load ALS data
-ig<- alsData$graph
 data<- alsData$exprs
 data<- transformData(data)$data
 group<- alsData$group
@@ -63,42 +66,35 @@ group<- alsData$group
 set.seed(123)
 train<- sample(1:nrow(data), 0.5*nrow(data))
 
-# SEM fitting
-sem0<- SEMrun(ig, data[train,], SE="none", limit=1000)
-
 # predictors, source+mediator; outcomes, mediator+sink
 
-res0<- predict(sem0, newdata=data[-train,]) 
-print(res0$PE)
-
-# SEM fitting
-sem1<- SEMrun(ig, data[train,], group[train], SE="none", limit=1000)
+ig <- alsData$graph; gplot(ig)
+sem0 <- SEMrun(ig, data[train,], algo="ricf", n_rep=0)
+pred0 <- predict(sem0, newdata=data[-train,], verbose=TRUE) 
 
 # predictors, source+mediator+group; outcomes, source+mediator+sink
 
-res1<- predict(sem1, newdata=cbind(group,data)[-train,]) 
-print(res1$PE)
+ig1 <- mapGraph(ig, type = "group"); gplot(ig1)
+data1 <- cbind(group, data); head(data1[,5])
+sem1 <- SEMrun(ig1, data1[train,], algo="ricf", n_rep=0)
+pred1 <- predict(sem1, newdata= data1[-train,], verbose=TRUE) 
 
-\donttest{
-#...with a binary outcome (1=case, 0=control)
+# predictors, source nodes; outcomes, sink nodes
 
-ig1<- mapGraph(ig, type="outcome"); gplot(ig1)
-outcome<- ifelse(group == 0, -1, 1); table(outcome)
-data1<- cbind(outcome, data); data1[1:5,1:5]
+ig2 <- mapGraph(ig, type = "source"); gplot(ig2)
+sem2 <- SEMrun(ig2, data[train,], algo="ricf", n_rep=0)
+pred2 <- predict(sem2, newdata=data[-train,], verbose=TRUE)
 
-sem10 <- SEMrun(ig1, data1[train,], SE="none", limit=1000)
-res10<- predict(sem10, newdata=data1[-train,], verbose=TRUE) 
+# predictors, graph nodes; outcomes, a categorical target variable
+# using SEMml(.., algo="sem") and classificationReport() functions
 
-yobs<- group[-train]
-yhat<- res10$Yhat[,"outcome"]
-benchmark(yobs, yhat)
+outcome<- factor(ifelse(group == 1, "case", "control"))
+sem3<- SEMml(ig, data[train, ], outcome[train], algo="sem")
+pred3<- predict(sem3, data[-train, ], outcome[-train], verbose=TRUE)
 
-#...with predictors, source nodes; outcomes, sink nodes
-ig2<- mapGraph(ig, type= "source"); gplot(ig2)
-
-sem02 <- SEMrun(ig2, data[train,], SE="none", limit=1000)
-res02<- predict(sem02, newdata=data[-train,], verbose=TRUE) 
-}
+yobs<- outcome[-train]
+yhat<- pred3$Yhat[ ,levels(outcome)]
+classificationReport(yobs, yhat)$stats
 
 }
 \references{

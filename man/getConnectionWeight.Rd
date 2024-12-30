@@ -2,7 +2,7 @@
 % Please edit documentation in R/SEMdnn.R
 \name{getConnectionWeight}
 \alias{getConnectionWeight}
-\title{Connection Weight Approach for neural network variable importance}
+\title{Connection Weight method for neural network variable importance}
 \usage{
 getConnectionWeight(object, thr = NULL, verbose = FALSE, ...)
 }
@@ -18,10 +18,12 @@ will not be plotted to screen.}
 \item{...}{Currently ignored.}
 }
 \value{
-A list od two object: (i) a data.frame including the connections together
-with their weights, and (ii) the DAG with colored edges. If abs(W) > thr and W < 0,
+A list od two object: (i) est: a data.frame including the connections together
+with their weights, and (ii)dag:  the DAG with colored edges. If abs(W) > thr and W < 0,
 the edge is inhibited and it is highlighted in blue; otherwise, if abs(W) > thr and
-W > 0, the edge is activated and it is highlighted in red.
+W > 0, the edge is activated and it is highlighted in red. If the outcome vector is
+given, nodes with absolute connection weights summed over the outcome levels, i.e.
+sum(abs(W[outcome levels])) > thr, will be highlighted in pink.
 }
 \description{
 The function computes the product of the raw input-hidden and
@@ -58,11 +60,11 @@ ig<- alsData$graph
 data<- alsData$exprs
 data<- transformData(data)$data
 
-dnn0 <- SEMdnn(ig, data, train=1:nrow(data), cowt = FALSE,
-			#loss = "mse", hidden = 5*K, link = "selu",
-			loss = "mse", hidden = c(10, 10, 10), link = "selu",
-			validation = 0, bias = TRUE, lr = 0.01,
-			epochs = 32, device = "cpu", verbose = TRUE)
+#ncores<- parallel::detectCores(logical = FALSE)
+dnn0<- SEMdnn(ig, data, cowt = FALSE, thr = NULL,
+			#hidden = 5*K, link = "selu", bias = TRUE,
+			hidden = c(10,10,10), link = "selu", bias = TRUE,
+			validation = 0,  epochs = 32, ncores = 2)
 
 res<- getConnectionWeight(dnn0, thr=NULL, verbose=TRUE)
 table(E(res$dag)$color)

@@ -2,15 +2,16 @@
 % Please edit documentation in R/SEMml.R
 \name{SEMml}
 \alias{SEMml}
-\title{Nodewise-predictive SEM train using Machine Learning (ML)}
+\title{Nodewise SEM train using Machine Learning (ML)}
 \usage{
 SEMml(
   graph,
   data,
-  train = NULL,
+  outcome = NULL,
   algo = "sem",
-  vimp = FALSE,
+  vimp = TRUE,
   thr = NULL,
+  ncores = 2,
   verbose = FALSE,
   ...
 )
@@ -18,33 +19,36 @@ SEMml(
 \arguments{
 \item{graph}{An igraph object.}
 
-\item{data}{A matrix with rows corresponding to subjects, and
-columns to graph nodes (variables).}
+\item{data}{A matrix with rows corresponding to subjects, and columns 
+to graph nodes (variables).}
 
-\item{train}{A numeric vector specifying the row indices corresponding to
-the train dataset (default = NULL).}
+\item{outcome}{A character vector (as.fctor) of labels for a categorical
+output (target). If NULL (default), the categorical output (target) will
+not be considered.}
 
 \item{algo}{ML method used for nodewise-network predictions.
 Six algorithms can be specified:
 \itemize{
 \item \code{algo="sem"} (default) for a linear SEM, see \code{\link[SEMgraph]{SEMrun}}. 
-\item \code{algo="gam"} for a generalized additive model, see \code{\link[mgcv]{gam}}.
+\item \code{algo="tree"} for a CART model, see \code{\link[rpart]{rpart}}.
 \item \code{algo="rf"} for a random forest model, see \code{\link[ranger]{ranger}}.
 \item \code{algo="xgb"} for a XGBoost model, see \code{\link[xgboost]{xgboost}}.
 \item \code{algo="nn"} for a small neural network model (1 hidden layer and 10 nodes), see \code{\link[nnet]{nnet}}.
 \item \code{algo="dnn"} for a large neural network model (1 hidden layers and 1000 nodes), see \code{\link[cito]{dnn}}.
 }}
 
-\item{vimp}{A Logical value(default=FALSE). If TRUE compute the variable
-importance, considering: (i) the squared value of the t-statistic or F-statistic
-of the model parameters for "sem" or "gam"; (ii) the variable importance from
-the \code{\link[ranger]{importance}} or \code{\link[xgboost]{xgb.importance}}
-functions for "rf" or "xgb"; (iii) the Olden's connection weights for "nn" or
-"dnn".}
+\item{vimp}{A Logical value(default=TRUE). Compute the variable (predictor) importance,
+considering: (i) the absolute value of the z-statistic of the model parameters
+for "sem"; (ii) the variable importance measures from the \code{\link[rpart]{rpart}},
+\code{\link[ranger]{importance}} or \code{\link[xgboost]{xgb.importance}} functions
+for "tree", "rf" or "xgb"; and (iii) the Olden's connection weights for "nn" or "dnn"
+methods. All vimp measures are expressed relative to their maximum value.}
 
 \item{thr}{A numerical value indicating the threshold to apply on the variable
 importance to color the graph. If thr=NULL (default), the threshold is set to
 thr = abs(mean(vimp)).}
+
+\item{ncores}{number of cpu cores (default = 2)}
 
 \item{verbose}{A logical value. If FALSE (default), the processed graph
 will not be plotted to screen.}
@@ -55,18 +59,22 @@ will not be plotted to screen.}
 An S3 object of class "ML" is returned. It is a list of 5 objects:
 \enumerate{
 \item "fit", a list of ML model objects, including: the estimated covariance 
-matrix (Sigma),  the estimated model errors (Psi), the fitting indices (fitIdx),
-and the signed Shapley R2 values (parameterEstimates), if shap = TRUE,
-\item "Yhat", the matrix of continuous predicted values of graph nodes  
-(excluding source nodes) based on training samples. 
-\item "model", a list of all the fitted nodewise-based models 
-(sem, gam, rf, xgb or nn).
+matrix (Sigma), the estimated model errors (Psi), the fitting indices (fitIdx),
+and, if vimp = TRUE, the variable importances (parameterEstimates).
+\item "gest", the data.frame of variable importances (parameterEstimates)
+of outcome levels, if vimp = TRUE and outcome != NULL.
+\item "model", a list of all the fitted non-linear nodewise-based models 
+(tree, rf, xgb, nn or dnn).
 \item "graph", the induced DAG of the input graph  mapped on data variables. 
 If vimp = TRUE, the DAG is colored based on the variable importance measure,
 i.e., if abs(vimp) > thr will be highlighted in red (vimp > 0) or blue
-(vimp < 0). 
-\item "data", training data subset mapping graph nodes. 
+(vimp < 0). If the outcome vector is given, nodes with variable importances
+summed over the outcome levels, i.e. sum(vimp[outcome levels])) > thr,
+will be highlighted in pink.
+\item "data", input data subset mapping graph nodes.
 }
+Using the default \code{algo="sem"}, the usual output of a linear nodewise-based,
+SEM, see \code{\link[SEMgraph]{SEMrun}} (algo="cggm"), will be returned.
 }
 \description{
 The function converts a graph to a collection of 
@@ -74,7 +82,7 @@ nodewise-based models: each mediator or sink variable can be expressed as
 a function of its parents. Based on the assumed type of relationship, 
 i.e. linear or non-linear, \code{SEMml()} fits a ML model to each
 node (variable) with non-zero incoming connectivity. 
-The model fitting is repeated equation-by equation (r=1,...,R) 
+The model fitting is performed equation-by equation (r=1,...,R) 
 times, where R is the number of mediators and sink nodes.
 }
 \details{
@@ -83,9 +91,8 @@ a set of nodewise-based models based on the directed links, i.e.,
 a set of edges pointing in the same direction, between two nodes 
 in the input graph that are causally relevant to each other. 
 The mediator or sink variables can be characterized in detail as 
-functions of their parents. An ML model (sem, gam, rf, xgb, nn, dnn) 
-can then be fitted to each variable with non-zero inbound connectivity, 
-taking into account the kind of relationship (linear or non-linear). 
+functions of their parents. An ML model (tree rf, xgb, nn, dnn) 
+can then be fitted to each variable with non-zero inbound connectivity. 
 With R representing the number of mediators and sink nodes in the 
 network, the model fitting process is performed equation-by-equation 
 (r=1,...,R) times.
@@ -94,10 +101,10 @@ network, the model fitting process is performed equation-by-equation
 
 \donttest{
 # Load Amyotrophic Lateral Sclerosis (ALS)
-data<- alsData$exprs; dim(data)
+ig<- alsData$graph
+data<- alsData$exprs
 data<- transformData(data)$data
-group<- alsData$group; table (group)
-ig<- alsData$graph; gplot(ig)
+group<- alsData$group
 
 #...with train-test (0.5-0.5) samples
 set.seed(123)
@@ -105,91 +112,77 @@ train<- sample(1:nrow(data), 0.5*nrow(data))
 
 start<- Sys.time()
 # ... rf
-res1<- SEMml(ig, data, train, algo="rf", vimp=TRUE)
+res1<- SEMml(ig, data[train, ], algo="rf", vimp=TRUE)
 
 # ... xgb
-res2<- SEMml(ig, data, train, algo="xgb", vimp=TRUE)
+res2<- SEMml(ig, data[train, ], algo="xgb", vimp=TRUE)
 
 # ... nn
-res3<- SEMml(ig, data, train, algo="nn", vimp=TRUE)
+res3<- SEMml(ig, data[train, ], algo="nn", vimp=TRUE)
 
-# ... gam
-res4<- SEMml(ig, data, train, algo="gam", vimp=TRUE)
+# ... sem
+res4<- SEMml(ig, data[train, ], algo="sem")
+
 end<- Sys.time()
 print(end-start)
 
-# ... sem
-res5<- SEMml(ig, data, train, algo="sem", vimp=TRUE)
+#visualizaation of the colored dag for algo="sem"
+gplot(res4$graph, l="dot", main="sem")
 
-#str(res5, max.level=2)
-res5$fit$fitIdx
-res5$fit$parameterEstimates
-gplot(res5$graph)
+#Comparison of fitting indices (in train data)
+res1$fit$fitIdx #rf
+res2$fit$fitIdx #xgb
+res3$fit$fitIdx #nn
+res4$fit$fitIdx #sem
 
-#Comparison of AMSE (in train data)
-rf <- res1$fit$fitIdx[2];rf
-xgb<- res2$fit$fitIdx[2];xgb
-nn <- res3$fit$fitIdx[2];nn
-gam<- res4$fit$fitIdx[2];gam
-sem<- res5$fit$fitIdx[2];sem
-
-#Comparison of SRMR (in train data)
-rf <- res1$fit$fitIdx[4];rf
-xgb<- res2$fit$fitIdx[4];xgb
-nn <- res3$fit$fitIdx[4];nn
-gam<- res4$fit$fitIdx[4];gam
-sem<- res5$fit$fitIdx[4];sem
+#Comparison of parameter estimates (in train data)
+parameterEstimates(res1$fit) #rf
+parameterEstimates(res2$fit) #xgb
+parameterEstimates(res3$fit) #nn
+parameterEstimates(res4$fit) #sem
 
 #Comparison of VIMP (in train data)
 table(E(res1$graph)$color) #rf
 table(E(res2$graph)$color) #xgb
 table(E(res3$graph)$color) #nn
-table(E(res4$graph)$color) #gam
-table(E(res5$graph)$color) #sem
+table(E(res4$graph)$color) #sem
 
-#Comparison of AMSE (in test data)
-print(predict(res1, data[-train, ])$PE[1]) #rf
-print(predict(res2, data[-train, ])$PE[1]) #xgb
-print(predict(res3, data[-train, ])$PE[1]) #nn
-print(predict(res4, data[-train, ])$PE[1]) #gam
-print(predict(res5, data[-train, ])$PE[1]) #sem
+#Comparison of AMSE, R2, SRMR (in test data)
+print(predict(res1, data[-train, ])$PE) #rf
+print(predict(res2, data[-train, ])$PE) #xgb
+print(predict(res3, data[-train, ])$PE) #nn
+print(predict(res4, data[-train, ])$PE) #sem
 
-#...with a binary outcome (1=case, 0=control)
+#...with a categorical (as.factor) outcome
+outcome <- factor(ifelse(group == 0, "control", "case")); table(outcome) 
 
-ig1<- mapGraph(ig, type="outcome"); gplot(ig1)
-outcome<- ifelse(group == 0, -1, 1); table(outcome)
-data1<- cbind(outcome, data); data1[1:5,1:5]
+res5 <- SEMml(ig, data[train, ], outcome[train], algo="tree", vimp=TRUE)
+gplot(res5$graph)
+table(E(res5$graph)$color)
+table(V(res5$graph)$color)
 
-res6 <- SEMml(ig1, data1, train, algo="nn", vimp=TRUE)
-gplot(res6$graph)
-table(E(res6$graph)$color)
-
-mse6 <- predict(res6, data1[-train, ])
-yobs <- group[-train]
-yhat <- mse6$Yhat[ ,"outcome"]
-benchmark(yobs, yhat, thr=0, F1=TRUE)
-benchmark(yobs, yhat, thr=0, F1=FALSE)
+pred <- predict(res5, data[-train, ], outcome[-train], verbose=TRUE)
+yhat <- pred$Yhat[ ,levels(outcome)]; head(yhat)
+yobs <- outcome[-train]; head(yobs)
+classificationReport(yobs, yhat, verbose=TRUE)$stats
 }
 
 }
 \references{
-Grassi M, Palluzzi F, Tarantino B (2022). SEMgraph: An R Package for Causal 
+Grassi M., Palluzzi F., and Tarantino B. (2022). SEMgraph: An R Package for Causal 
 Network Analysis of High-Throughput Data with Structural Equation Models. 
 Bioinformatics, 38 (20), 4829–4830 <https://doi.org/10.1093/bioinformatics/btac567>
 
-Hastie, T. and Tibshirani, R. (1990) Generalized Additive Models. London: 
-Chapman and Hall.
+Breiman L., Friedman J.H., Olshen R.A., and Stone, C.J. (1984) Classification
+and Regression Trees. Chapman and Hall/CRC.
 
-Breiman, L. (2001), Random Forests, Machine Learning 45(1), 5-32.
+Breiman L. (2001). Random Forests, Machine Learning 45(1), 5-32.
 
-Chen, T., & Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System. 
+Chen T., and Guestrin C. (2016). XGBoost: A Scalable Tree Boosting System. 
 Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge 
 Discovery and Data Mining.
 
-Ripley, B. D. (1996) Pattern Recognition and Neural Networks. Cambridge.
-
-Redell, N. (2019). Shapley Decomposition of R-Squared in Machine Learning 
-Models. arXiv: Methodology.
+Ripley B.D. (1996). Pattern Recognition and Neural Networks. Cambridge University Press.
 }
 \author{
 Mario Grassi \email{mario.grassi@unipv.it}

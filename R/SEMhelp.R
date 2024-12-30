@@ -29,11 +29,11 @@
 #' layers act as predictors x. 
 #' 
 #' @param object An object, as that created by the function \code{SEMrun()}
-#' with the argument \code{fit} set to \code{fit = 0} or \code{fit = 1}.
+#' with the argument \code{group} set to the default \code{group = NULL}.
 #' @param newdata A matrix with new data, with rows corresponding to subjects,
-#' and columns to variables. If \code{object$fit} is a model with the group
-#' variable (\code{fit = 1}), the first column of newdata must be the new
-#' group binary vector (0=control, 1=case). 
+#' and columns to variables. 
+#' @param newoutcome A new character vector (as.factor) of labels for a categorical
+#' output (target)(default = NULL).
 #' @param verbose A logical value. If FALSE (default), the processed graph 
 #' will not be plotted to screen.
 #' @param ... Currently ignored.
@@ -41,20 +41,23 @@
 #' @details  The function first creates a layer-based structure of the
 #' input graph. Then, a SEM-based predictive approach (Rooij et al., 2022) 
 #' is used to produce predictions while accounting for the graph structure
-#' organised in topological layers, j=1,...,L. In each iteration, the response
-#' variables y are the nodes in the j layer and the predictors x are the nodes
-#' belonging to the previous j-1 layers. 
+#' based on the topological layer (j=1,…,L) of the input graph. In each iteration,
+#' the response (output) variables, y are the nodes in the j=1,...,(L-1) layer and
+#' the predictor (input) variables, x are the nodes belonging to the successive,
+#' (j+1),...,L layers.
 #' Predictions (for y given x) are based on the (joint y and x) model-implied 
 #' variance-covariance (Sigma) matrix and mean vector (Mu) of the fitted SEM,
 #' and the standard expression for the conditional mean of a multivariate normal
 #' distribution. Thus, the layer structure described in the SEM is taken into
 #' consideration, which differs from ordinary least squares (OLS) regression.
 #'
-#' @return A list of 2 objects:
+#' @return A list of 3 objects:
 #' \enumerate{
-#' \item "PE", vector of the prediction error equal to the Mean Squared Error
-#' (MSE) for each out-of-bag prediction. The first value of PE is the AMSE,
-#' where we average over all (sink and mediators) graph nodes.
+#' \item "PE", vector of the amse = average MSE over all (sink and mediators)
+#' graph nodes; r2 = 1 - amse; and srmr= Standardized Root Means Square Residual
+#' between the out-of-bag correlation matrix and the model correlation matrix.
+#' \item "mse", vector of the Mean Squared Error (MSE) for each out-of-bag
+#' prediction of the sink and mediators graph nodes.
 #' \item "Yhat", the matrix of continuous predicted values of graph nodes  
 #' (excluding source nodes) based on out-of-bag samples. 
 #' }
@@ -75,7 +78,6 @@
 #' @examples
 #'
 #' # load ALS data
-#' ig<- alsData$graph
 #' data<- alsData$exprs
 #' data<- transformData(data)$data
 #' group<- alsData$group
@@ -84,139 +86,113 @@
 #' set.seed(123)
 #' train<- sample(1:nrow(data), 0.5*nrow(data))
 #'
-#' # SEM fitting
-#' sem0<- SEMrun(ig, data[train,], SE="none", limit=1000)
-#' 
 #' # predictors, source+mediator; outcomes, mediator+sink
 #'
-#' res0<- predict(sem0, newdata=data[-train,]) 
-#' print(res0$PE)
+#' ig <- alsData$graph; gplot(ig)
+#' sem0 <- SEMrun(ig, data[train,], algo="ricf", n_rep=0)
+#' pred0 <- predict(sem0, newdata=data[-train,], verbose=TRUE) 
 #' 
-#' # SEM fitting
-#' sem1<- SEMrun(ig, data[train,], group[train], SE="none", limit=1000)
-#'
 #' # predictors, source+mediator+group; outcomes, source+mediator+sink
 #'
-#' res1<- predict(sem1, newdata=cbind(group,data)[-train,]) 
-#' print(res1$PE)
+#' ig1 <- mapGraph(ig, type = "group"); gplot(ig1)
+#' data1 <- cbind(group, data); head(data1[,5])
+#' sem1 <- SEMrun(ig1, data1[train,], algo="ricf", n_rep=0)
+#' pred1 <- predict(sem1, newdata= data1[-train,], verbose=TRUE) 
 #'
-#' \donttest{
-#' #...with a binary outcome (1=case, 0=control)
-#' 
-#' ig1<- mapGraph(ig, type="outcome"); gplot(ig1)
-#' outcome<- ifelse(group == 0, -1, 1); table(outcome)
-#' data1<- cbind(outcome, data); data1[1:5,1:5]
-#' 
-#' sem10 <- SEMrun(ig1, data1[train,], SE="none", limit=1000)
-#' res10<- predict(sem10, newdata=data1[-train,], verbose=TRUE) 
-#' 
-#' yobs<- group[-train]
-#' yhat<- res10$Yhat[,"outcome"]
-#' benchmark(yobs, yhat)
+#' # predictors, source nodes; outcomes, sink nodes
 #'
-#' #...with predictors, source nodes; outcomes, sink nodes
-#' ig2<- mapGraph(ig, type= "source"); gplot(ig2)
-#' 
-#' sem02 <- SEMrun(ig2, data[train,], SE="none", limit=1000)
-#' res02<- predict(sem02, newdata=data[-train,], verbose=TRUE) 
-#' }
+#' ig2 <- mapGraph(ig, type = "source"); gplot(ig2)
+#' sem2 <- SEMrun(ig2, data[train,], algo="ricf", n_rep=0)
+#' pred2 <- predict(sem2, newdata=data[-train,], verbose=TRUE)
+#'
+#' # predictors, graph nodes; outcomes, a categorical target variable
+#' # using SEMml(.., algo="sem") and classificationReport() functions
+#'
+#' outcome<- factor(ifelse(group == 1, "case", "control"))
+#' sem3<- SEMml(ig, data[train, ], outcome[train], algo="sem")
+#' pred3<- predict(sem3, data[-train, ], outcome[-train], verbose=TRUE)
+#'
+#' yobs<- outcome[-train]
+#' yhat<- pred3$Yhat[ ,levels(outcome)]
+#' classificationReport(yobs, yhat)$stats
 #'
 #' @method predict SEM
 #' @export
 #' @export predict.SEM
 #' 
-
-predict.SEM <- function(object, newdata, verbose = FALSE, ...)
+predict.SEM <- function(object, newdata, newoutcome = NULL, verbose = FALSE, ...)
 {
-	# set data, graph, predictors and outcomes
-	stopifnot(inherits(object$fit, c("lavaan", "RICF", "GGM")))
-	#stop("ERROR: in SEMrun( ) the fit=2 argument does not run (for now)")
-	graph<- object$graph
-	data <- object$data
-	vnames <- colnames(data)
-    if (!is.na(data[1, 1])) {
-	 graph <- mapGraph(graph, type = "group")
-	}else{
-	 data <- data[,-1]
-	 vnames	<- vnames[-1]
+  # set data and graph objects
+  stopifnot(inherits(object$fit, c("lavaan", "RICF", "GGM")))
+  fit<- object$fit
+  graph<- object$graph
+  data<- object$data[,-1]
+  if (!is.null(newoutcome)) {
+    out<- model.matrix(~newoutcome-1)
+    colnames(out)<- gsub("newoutcome", "", colnames(out))
+    newdata<- cbind(out, newdata)
+    graph<- mapGraph(graph, type="outcome", C=ncol(out))
+    V(graph)$name[igraph::degree(graph, mode="out") == 0]<- colnames(out)
+  }
+  graph<- graph2dag(graph, data, bap=FALSE)
+  L<- buildLevels(graph)
+  
+  # SEM predition on test data
+  mp<- apply(data, 2, mean)
+  sp<- apply(data, 2, sd)
+  yobs<- NULL
+  yhat<- NULL
+  
+  if (inherits(fit, "lavaan")) {
+    #Sigma<- lavaan::fitted(fit)$cov
+    Sigma<- lavaan::lavInspect(fit, "sigma")
+    colnames(Sigma)<- sub(".", "", colnames(Sigma))
+    rownames(Sigma)<- colnames(Sigma)
+    #mu<- fitted(fit$fit)$mean
+  }else{
+    Sigma<- fit$Sigma
+    #mu<- rep(0, p)
+  }
+  
+  for (l in 1:(length(L)-1)) {
+    yn<- L[[l]]
+    xn<- unlist(L[(l+1):length(L)])
+    Sxx<- Sigma[xn, xn]
+    Sxy<- Sigma[xn, yn]
+    mx<- rep(0, length(xn))
+    my<- rep(0, length(yn))
+    xtest<- as.matrix(newdata[, xn])
+    xtest<- scale(xtest, center=mp[xn], scale=sp[xn])
+    #xtest<- scale(xtest, center = mx, scale = TRUE)
+    n<- nrow(xtest)
+    py<- length(yn)
+    My<- matrix(my, n, py, byrow = TRUE)
+    if (corpcor::is.positive.definite(Sxx)) {
+      yhatl<- My + xtest %*% solve(Sxx) %*% Sxy 
+    }else{
+      yhatl<- My + xtest %*% Sxy
     }
-	train <- data[,vnames]
-	test <- newdata[,vnames]
-	data <- rbind(train, test)
-	vnodes <- colnames(data)[colnames(data) %in% V(graph)$name]
-	graph<- induced_subgraph(graph, vids = vnodes)
-	graph<- graph2dag(graph, data[train,])
-	din<- igraph::degree(graph, mode = "in")
-	dout<- igraph::degree(graph, mode = "out")
-	V(graph)$color[din == 0]<- "cyan"
-	V(graph)$color[dout == 0]<- "orange"
-	L<- buildLevels(graph)
-	if (verbose) gplot(graph)
-
-	# SEM fitting on train data and predition on test data
-	K_fold<- 1
-	idx<- list(1:nrow(train))
-	yobs<- NULL
-	yhat<- NULL
-	
-	for (k in 1:K_fold) { #k=1
-	  if (K_fold != 1) {
-		message("Fold: ", k) 
-		fit<- quiet(SEMrun(graph, data[idx[[k]],], algo="ricf", n_rep=0))
-	  }else{
-		fit<- object
-	  }
-	  if (inherits(fit$fit, "lavaan")) {
-		#Sigma<- lavaan::fitted(fit$fit)$cov
-		Sigma<- lavaan::lavInspect(fit$fit, "sigma")
-		colnames(Sigma)<- gsub("z", "", colnames(Sigma))
-		rownames(Sigma)<- colnames(Sigma)
-		#mu<- fitted(fit$fit)$mean
-	  }else{
-		Sigma<- fit$fit$Sigma
-		#mu<- rep(0, p)
-	  }
-	  Zk<- data[idx[[k]],]
-	  mk<- apply(Zk, 2, mean)
-	  sk<- apply(Zk, 2, sd)
-	  yobsk<- NULL
-	  yhatk<- NULL
-		 
-	  for (l in 1:(length(L)-1)) {
-		yn<- L[[l]]
-		xn<- unlist(L[(l+1):length(L)])
-		Sxx<- Sigma[xn, xn]
-		Sxy<- Sigma[xn, yn]
-		mx<- rep(0, length(xn))
-		my<- rep(0, length(yn))
-		xtest<- as.matrix(data[-idx[[k]], xn])
-		xtest<- scale(xtest, center=mk[xn], scale=sk[xn])
-		#xtest<- scale(xtest, center = mx, scale = TRUE)
-		n<- nrow(xtest)
-		py<- length(yn)
-		My<- matrix(my, n, py, byrow = TRUE)
-		if (corpcor::is.positive.definite(Sxx)) {
-			yhatlk<- My + xtest %*% solve(Sxx) %*% Sxy 
-		}else{
-			yhatlk<- My + xtest %*% Sxy
-		}
-		yobslk<- data[-idx[[k]], yn]
-		yobslk<- scale(yobslk, center=mk[yn], scale=sk[yn])
-		#yobslk<- scale(data[-idx[[k]], yn]) #dim(yhatlk)
-		colnames(yobslk)<- colnames(yhatlk)<- yn
-		yobsk<- cbind(yobsk, yobslk)
-		yhatk<- cbind(yhatk, yhatlk)
-	  }
-	  
-	  yobs<- rbind(yobs, yobsk)
-	  yhat<- rbind(yhat, yhatk)
-	}
-
-	PE<- colMeans((yobs - yhat)^2)
-	pe<- mean(PE)
-	if (verbose) print(c(amse=pe,PE))
-
-	return(list(PE=c(amse=pe,PE), Yhat=yhat))
+    yobsl<- newdata[, yn]
+    yobsl<- scale(yobsl, center=mp[yn], scale=sp[yn])
+    #yobsl<- scale(yobsl) #dim(yhatl)
+    colnames(yobsl)<- colnames(yhatl)<- yn
+    yobs<- cbind(yobs, yobsl)
+    yhat<- cbind(yhat, yhatl)
+  }
+  
+  PE<- colMeans((yobs - yhat)^2)
+  PE<- ifelse(PE > 1, 1, PE)
+  pe<- mean(PE, na.rm = TRUE)
+  
+  Shat<- Sigma
+  V<- colnames(Shat)
+  Sobs<- cor(newdata[, V])
+  E<- Sobs - Shat
+  SRMR<- sqrt(mean(E[lower.tri(E, diag = TRUE)]^2))
+  
+  if (verbose) print(c(amse=pe, r2=1-pe, srmr=SRMR))
+  
+  return(list(PE=c(amse=pe, r2=1-pe, srmr=SRMR), mse=PE, Yhat=yhat))
 }
 
 #' @title Create a plot for a neural network model
@@ -255,11 +231,11 @@ predict.SEM <- function(object, newdata, verbose = FALSE, ...)
 #' data<- alsData$exprs
 #' data<- transformData(data)$data
 #'
+#' #ncores<- parallel::detectCores(logical = FALSE)
 #' dnn0 <- SEMdnn(ig, data, train=1:nrow(data), grad = FALSE,
-#' 			#loss = "mse", hidden = 5*K, link = "selu",
-#' 			loss = "mse", hidden = c(10, 10, 10), link = "selu",
-#' 			validation = 0, bias = TRUE, lr = 0.01,
-#' 			epochs = 32, device = "cpu", verbose = TRUE)
+#' 			#hidden = 5*K, link = "selu", bias = TRUE,
+#' 			hidden = c(10, 10, 10), link = "selu", bias =TRUE,
+#' 			validation = 0, epochs = 32, ncores = 2)
 #'
 #'  for (j in 1:length(dnn0$model)) { 
 #'    nplot(dnn0$model[[j]])
@@ -270,23 +246,22 @@ predict.SEM <- function(object, newdata, verbose = FALSE, ...)
 #'
 #' @export
 #' 
-
 nplot<- function(dnn.fit, bias=FALSE, ...)
 {
-	W<- coef(dnn.fit)[[1]] #str(W)
-	w0<- list()
-	for (i in seq(2, length(W), by=2)){
-	  wi<- cbind(W[[i]],W[[i-1]])
-	  w0<- c(w0, list(t(wi)))
-	} #w0
-	w1<- unlist(w0) #w1
-	input<- dnn.fit$ model_properties$input
-	hidden<- dnn.fit$ model_properties$hidden
-	output<- dnn.fit$ model_properties$output
-	struct1<- c(input, hidden, output)
-	g<- NeuralNetTools::plotnet(w1, struct1, pos_col="red", neg_col="blue", bias=bias)
-	
-	return(invisible(g))
+  W<- coef(dnn.fit)[[1]] #str(W)
+  w0<- list()
+  for (i in seq(2, length(W), by=2)){
+    wi<- cbind(W[[i]],W[[i-1]])
+    w0<- c(w0, list(t(wi)))
+  } #w0
+  w1<- unlist(w0) #w1
+  input<- dnn.fit$ model_properties$input
+  hidden<- dnn.fit$ model_properties$hidden
+  output<- dnn.fit$ model_properties$output
+  struct1<- c(input, hidden, output)
+  g<- NeuralNetTools::plotnet(w1, struct1, pos_col="red", neg_col="blue", bias=bias)
+  
+  return(invisible(g))
 }
 
 #' @title Map additional variables (nodes) to a graph object
@@ -294,27 +269,30 @@ nplot<- function(dnn.fit, bias=FALSE, ...)
 #' @description The function insert additional nodes to a graph object.
 #' Among the node types, additional source or sink nodes can be added. 
 #' Regarding the former, source nodes can represent: (i) data variables; 
-#' (ii) a group variable; (iii) Latent Variables (LV). For the latter, an 
-#' outcome variable, representing the prediction of interest, can be added. 
-#' Moreover, \code{mapGraph()} can also create a new graph object starting
-#' from a compact symbolic formula. 
+#' (ii) a group variable; (iii) Latent Variables (LV). For the latter,
+#' Sink nodes represent the levels of a categorical outcome variable and
+#' are linked with all graph nodes.' Moreover, \code{mapGraph()} can also
+#' create a new graph object starting from a compact symbolic formula. 
 #' 
 #' @param graph An igraph object.
 #' @param type A character value specifying the type of mapping. Five 
-#' types can be specified. If \code{type = "source"} is specified, an 
-#' additional source node (or more) is added to the graph. If 
-#' \code{type = "group"}, an additional group source node is added. If
-#' \code{type = "outcome"} (default), a prediction sink node is mapped
-#' to the graph. If \code{type = "LV"}, a LV source node is included (where
-#' the number of LV depends on the LV argument). If \code{type = "clusterLV"},
-#' a series of clusters for the data are computed and a different LV source
-#' node is added separately for each cluster.
+#' types can be specified.
+#' \enumerate{
+#' \item "source", source nodes are linked to sink nodes of the graph.
+#' \item "group", an additional group source node is added to the graph.
+#' \item "outcome", additional c=1,2,...,C sink nodes are added to the graph.
+#' \item "LV", additional latent variable (LV) source nodes are added to the graph. 
+#' \item "clusterLV", a series of clusters for the data are computed
+#' and a different LV source node is added separately for each cluster.
+#' }
+#' @param C the number of labels of the categorical sink node (default = NULL).
 #' @param LV The number of LV source nodes to add to the graph. This argument 
 #' needs to be specified when \code{type = "LV"}. When \code{type = "clusterLV"}
 #' the LV number is defined internally equal to the number of clusters.
 #' (default = NULL).
 #' @param f A formula object (default = NULL). A new graph object is created
-#' according to the specified formula object. 
+#' according to the specified formula object.
+#' @param verbose If TRUE disply the mapped graph (default = FALSE) 
 #' @param ... Currently ignored.
 #'
 #' @return mapGraph returns invisibly the graphical object with the
@@ -327,19 +305,19 @@ nplot<- function(dnn.fit, bias=FALSE, ...)
 #' # Load Amyotrophic Lateral Sclerosis (ALS)
 #' ig<- alsData$graph; gplot(ig)
 #' 
-#' # ... map source nodes to ALS graph 
+#' # ... map source nodes to sink nodes of ALS graph 
 #' ig1 <- mapGraph(ig, type = "source"); gplot(ig1, l="dot")
 #' 
 #' # ... map group source node to ALS graph 
 #' ig2 <- mapGraph(ig, type = "group"); gplot(ig2, l="fdp")
 #' 
-#' # ... map outcome sink to ALS graph 
-#' ig3 <- mapGraph(ig, type = "outcome"); gplot(ig3, l="dot")
+#' # ... map outcome sink (C=2) to ALS graph 
+#' ig3 <- mapGraph(ig, type = "outcome", C=2); gplot(ig3, l="fdp")
 #' 
 #' # ... map LV source nodes to ALS graph 
 #' ig4 <- mapGraph(ig, type = "LV", LV = 3); gplot(ig4, l="fdp")
 #' 
-#' # ... map LV source nodes to the clusters of ALS graph 
+#' # ... map LV source nodes to the cluster nodes of ALS graph 
 #' ig5 <- mapGraph(ig, type = "clusterLV"); gplot(ig5, l="dot")
 #'
 #' # ... create a new graph with the formula variables
@@ -348,363 +326,681 @@ nplot<- function(dnn.fit, bias=FALSE, ...)
 #
 #' @export
 #' 
-
-mapGraph <- function(graph, type = "outcome", LV = NULL, f = NULL, ...)
+mapGraph <- function(graph, type, C = NULL, LV = NULL, f = NULL, verbose = FALSE, ...)
 {
-	if (!is.null(f)) {
-	  g <- map_formula(f)
-	  return(invisible(g))
-	}
-	if (type == "source") g <- map_source(graph)
-	if (type == "group") g <- map_group(graph)
-	if (type == "outcome") g <- map_outcome(graph)
-	if (type == "LV") g <- map_LV(graph, LV=LV, cg=NULL)
-	if (type == "clusterLV"){
-	  cg<- SEMgraph::clusterGraph(graph, size=0)
-	  LV<- length(table(cg))
-	  g<- map_LV(graph, LV=LV, cg=cg)
-	}
-	return(invisible(g))
+  if (!is.null(f)) {
+    g <- map_formula(f, verbose=verbose)
+    return(invisible(g))
+  }
+  if (type == "source") g <- map_source(graph, verbose=verbose)
+  if (type == "group") g <- map_group(graph, verbose=verbose)
+  if (type == "outcome") g <- map_outcome(graph, C=C, verbose=verbose)
+  if (type == "LV") g <- map_LV(graph, LV=LV, cg=NULL, verbose=verbose)
+  if (type == "clusterLV"){
+    cg<- SEMgraph::clusterGraph(graph, size=0)
+    LV<- length(table(cg))
+    g<- map_LV(graph, LV=LV, cg=cg, verbose=verbose)
+  }
+  return(invisible(g))
 }
 
-map_formula <- function(f, verbose=FALSE, ...)
+map_formula <- function(f, verbose, ...)
 {
-	vf <- all.vars(f)
-	y <- vf[1]
-	xn <- vf[-1]
-	gout <- make_empty_graph(length(vf))
-	V(gout)$name <- c(vf)
-	E <- NULL
-	for(k in 1:length(xn)){
-	 E <- c(E, xn[k], y)
-	}
-	gout <- gout + igraph::edges(E)
-	if (verbose) gplot(gout)
-	
-	return(gout) 
+  vf <- all.vars(f)
+  y <- vf[1]
+  xn <- vf[-1]
+  gout <- make_empty_graph(length(vf))
+  V(gout)$name <- c(vf)
+  E <- NULL
+  for(k in 1:length(xn)){
+    E <- c(E, xn[k], y)
+  }
+  gout <- gout + igraph::edges(E)
+  if (verbose) gplot(gout)
+  
+  return(gout) 
 }
 
-map_source <- function(graph, verbose=FALSE, ...)
+map_source <- function(graph, verbose, ...)
 {
-	din <- igraph::degree(graph, mode= "in")
-	dout <- igraph::degree(graph, mode = "out")
-	xn <- V(graph)$name[din == 0]
-	yn <- V(graph)$name[dout == 0]
-	gout <- make_empty_graph(length(c(xn,yn)))
-	V(gout)$name <- c(xn,yn)
-	E <- NULL
-	 for(k in 1:length(xn)){
-	  for(j in 1:length(yn)){
-		E <- c(E, xn[k], yn[j])
-	  }
-	 }
-	gout <- gout + igraph::edges(E)  
-	if (verbose) gplot(gout)
-	
-	return(gout)	
+  din <- igraph::degree(graph, mode= "in")
+  dout <- igraph::degree(graph, mode = "out")
+  xn <- V(graph)$name[din == 0]
+  yn <- V(graph)$name[dout == 0]
+  gout <- make_empty_graph(length(c(xn,yn)))
+  V(gout)$name <- c(xn,yn)
+  E <- NULL
+  for(k in 1:length(xn)){
+    for(j in 1:length(yn)){
+      E <- c(E, xn[k], yn[j])
+    }
+  }
+  gout <- gout + igraph::edges(E)  
+  if (verbose) gplot(gout)
+  
+  return(gout)	
 }
 
-map_group <- function(graph, verbose=FALSE, ...)
+map_group <- function(graph, verbose, ...)
 {
-	gout <- graph + igraph::vertices("group")
-	nodes<- V(graph)$name
-	E <- NULL
-	 for(v in 1:length(nodes)){
-	  	E <- c(E, "group", nodes[v])
-	  }
-	gout <- gout + igraph::edges(E)
-	V(gout)$color[V(gout)$name == "group"] <- "green"
-	if (verbose) gplot(gout)
-	
-	return(gout)	
+  gout <- graph + igraph::vertices("group")
+  nodes<- V(graph)$name
+  E <- NULL
+  for(v in 1:length(nodes)){
+    E <- c(E, "group", nodes[v])
+  }
+  gout <- gout + igraph::edges(E)
+  V(gout)$color[V(gout)$name == "group"] <- "green"
+    if (verbose) gplot(gout)
+  
+  return(gout)	
 }
 
-map_outcome <- function(graph, verbose=FALSE, ...)
+map_outcome <- function(graph, C, verbose, ...)
 {
-	gout <- graph + igraph::vertices("outcome")
-	dout<- igraph::degree(graph, mode = "out")
-	leaf<- V(graph)$name[dout == 0]
-	E <- NULL
-	 for(v in 1:length(leaf)){
-	  	E <- c(E, leaf[v], "outcome")
-	  }
-	gout <- gout + igraph::edges(E)
-	V(gout)$color[V(gout)$name == "outcome"] <- "green"
-	if (verbose) gplot(gout)
-	
-	return(gout)	
+  outcome<- paste0("out", 1:C)
+  gout <- graph + igraph::vertices(outcome)
+  nodes<- V(graph)$name
+  E <- NULL
+  for(v in 1:length(nodes)){
+    for (k in 1:C) E <- c(E, nodes[v], paste0("out",k))
+  }
+  gout <- gout + igraph::edges(E)
+  V(gout)$color[V(gout)$name %in% paste0("out", 1:C)] <- "yellow"
+    if (verbose) gplot(gout)
+  
+  return(gout)	
 }
 
-map_LV <- function(graph, LV, cg=NULL, verbose=FALSE, ...)
+map_sink <- function(graph, C, verbose, ...)
 {
-	VH <- paste0("LV", 1:LV)
-	gH <- graph + igraph::vertices(VH)
-	E <- NULL
-	if (is.null(cg)) {
-	 for(v in 1:length(VH)){
-	   for(i in 1:vcount(graph)){ #i=1
-		 E <- c(E, VH[v], V(graph)$name[i])
-	   }
-	 }
-	}
-	if (!is.null(cg)) {
-	 VH <- paste0("LV", cg)
-	 for(i in 1:vcount(graph)){ #i=1
-	   E <- c(E, VH[i], names(cg[i]))
-	 }
-	}
-	gH <- gH + igraph::edges(E)
-	V(gH)$color[V(gH)$name %in% VH] <- "green"
-	if (verbose) gplot(gH, l="fdp")
-	
-	return(gH)	
+  outcome<- paste0("out", 1:C)
+  gout <- graph + igraph::vertices(outcome)
+  dout<- igraph::degree(graph, mode = "out")
+  leaf<- V(graph)$name[dout == 0]
+  E <- NULL
+  for(v in 1:length(leaf)){
+    for (k in 1:C) E <- c(E, leaf[v], paste0("out",k))
+  }
+  gout <- gout + igraph::edges(E)
+  V(gout)$color[V(gout)$name %in% paste0("out", 1:C)] <- "yellow"
+    if (verbose) gplot(gout)
+  
+  return(gout)	
+}
+
+map_LV <- function(graph, LV, cg, verbose, ...)
+{
+  VH <- paste0("LV", 1:LV)
+  gH <- graph + igraph::vertices(VH)
+  E <- NULL
+  if (is.null(cg)) {
+    for(v in 1:length(VH)){
+      for(i in 1:vcount(graph)){ #i=1
+        E <- c(E, VH[v], V(graph)$name[i])
+      }
+    }
+  }
+  if (!is.null(cg)) {
+    VH <- paste0("LV", cg)
+    for(i in 1:vcount(graph)){ #i=1
+      E <- c(E, VH[i], names(cg[i]))
+    }
+  }
+  gH <- gH + igraph::edges(E)
+  V(gH)$color[V(gH)$name %in% VH] <- "green"
+    if (verbose) gplot(gH, l="fdp")
+  
+  return(gH)	
 }
 
 buildLevels <- function(dag, ...)
 {
-	Leaf_removal <- function(dag)
-	{
-	 levels <- list()
-	 level <- 1
-	 repeat {
-	  leaves <- igraph::degree(dag, mode= "out")
-	  levels[[level]]<- names(leaves)[leaves == 0]
-  	  dag <- delete_vertices(dag, names(leaves)[leaves == 0])
-	  level <- level+1
-	  if (vcount(dag)==0 | ecount(dag)==0) break
-	 }
-	 levels[[level]] <- V(dag)$name
-	 names(levels)<- 1:level
-	 return(levels)
-	}
-
-	# leaf-removal(dag)
-	l1<- Leaf_removal(dag)
-	if (length(l1) == 2) return(l1)
-	# leaf removal(dagT)
-	adj <- as_adj(dag, sparse=FALSE)
-	dagT <- graph_from_adjacency_matrix(t(adj), mode="directed")
-	l2 <- Leaf_removal(dagT)
-	l2 <- rev(l2)
-	# number-of-layers 
-	L <- max(length(l1), length(l2))
-
-	# combine BU-ordering (dag+dagT)
-	l3 <- list()
-	l3[[1]] <- l1[[1]] #sink
-	l3[[L]] <- l2[[L]] #source
-	for (k in 2:(L-1)){
-	 lk <- unique(c(l1[[k]], l2[[k]]))
-	 Lk <- unlist(l3[c(1:(k-1),L)])
-	 l3[[k]] <- setdiff(lk, Lk)
-	}
-
-	return(l3)
+  Leaf_removal <- function(dag)
+  {
+    levels <- list()
+    level <- 1
+    repeat {
+      leaves <- igraph::degree(dag, mode= "out")
+      levels[[level]]<- names(leaves)[leaves == 0]
+      dag <- delete_vertices(dag, names(leaves)[leaves == 0])
+      level <- level+1
+      if (vcount(dag)==0 | ecount(dag)==0) break
+    }
+    levels[[level]] <- V(dag)$name
+    names(levels)<- 1:level
+    return(levels)
+  }
+  
+  # leaf-removal(dag)
+  l1<- Leaf_removal(dag)
+  if (length(l1) == 2) return(l1)
+  # leaf removal(dagT)
+  adj <- as_adj(dag, sparse=FALSE)
+  dagT <- graph_from_adjacency_matrix(t(adj), mode="directed")
+  l2 <- Leaf_removal(dagT)
+  l2 <- rev(l2)
+  # number-of-layers 
+  L <- max(length(l1), length(l2))
+  
+  # combine BU-ordering (dag+dagT)
+  l3 <- list()
+  l3[[1]] <- l1[[1]] #sink
+  l3[[L]] <- l2[[L]] #source
+  for (k in 2:(L-1)){
+    lk <- unique(c(l1[[k]], l2[[k]]))
+    Lk <- unlist(l3[c(1:(k-1),L)])
+    l3[[k]] <- setdiff(lk, Lk)
+  }
+  
+  return(l3)
 }
 
-#' @title Prediction benchmark evaluation utility
+#' @title Prediction evaluation report of a classification model
 #'
-#' @description This function is able to calculate a series of binary 
-#' classification evaluation statistics given (i) two vectors: one with the 
-#' true target variable values, and the other with the predicted target variable
-#' values or (ii) a confusion matrix with the counts for False Positives (FP), 
-#' True Positives (TP), True Negatives (TN), and False Negatives (FN).
-#' The user can specify the desired set of metrics to compute: (i) precision, 
-#' recall, f1 score and Matthews Correlation Coefficient (mcc) or 
-#' (ii) specificity, sensitivity, accuracy and mcc.
+#' @description This function builds a report showing the main classification 
+#' metrics. It provides an overview of key evaluation metrics like precision, 
+#' recall, F1-score, accuracy, Matthew's correlation coefficient (mcc) and
+#' support (testing size) for each class in the dataset and averages (macro or
+#' weighted) for all classes.
 #' 
-#' @param yobs A binary (0,1) vector with the true target variable values. 
-#' @param yhat A continuous vector with the predicted target variable values. 
-#' @param CT An optional confusion matrix of dimension 2x2 containing the counts 
-#' for FP, TP, TN, and FN.
-#' @param thr A numerical value indicating the threshold for converting the
-#' \code{yhat} continuous vector to a binary vector (default: \code{thr = 0});
-#' if the user sets \code{thr = 0.5}, the \code{yhat} is transformed into a
-#' probability by the logistic function, exp(\code{yhat})/(1 + exp(\code{yhat})).
-#' @param F1 A logical value. If TRUE (default), precision (pre), recall (rec),
-#' f1 and mcc will be computed. Otherwise, if FALSE, specificity (sp),
-#' sensitivity (se), accuracy (acc) and mcc will be obtained.
-#' @param verbose A logical value. If FALSE (default), the density plots of 
-#' \code{yhat} per group will not be plotted to screen.
+#' @param yobs A vector with the true target variable values. 
+#' @param yhat A matrix with the predicted target variables values. 
+#' @param CM An optional (external) confusion matrix CxC. 
+#' @param verbose A logical value (default = FALSE). If TRUE, the confusion
+#' matrix is printed on the screen, and if C=2, the density plots of the
+#' predicted probability for each group are also printed.
 #' @param ... Currently ignored.
 #'
-#' @details #' Suppose a 2x2 table with notation
+#' @details Given one vector with the true target variable labels, 
+#' and the a matrix with the predicted target variable values for each class, 
+#' a series of classification metrics is computed. 
+#' For example, suppose a 2x2 table with notation
 #'
-#' \tabular{rcc}{ \tab Reference \tab \cr Predicted \tab Event \tab No Event
-#' \cr Event \tab A \tab B \cr No Event \tab C \tab D \cr }
+#' \tabular{rcc}{ \tab Predicted \tab \cr Observed \tab Yes Event \tab No Event
+#' \cr Yes Event \tab A \tab C \cr No Event \tab B \tab D \cr }
 #'
-#' The formulas used here are: \deqn{se = A/(A+C)} \deqn{sp =
-#' D/(B+D)} \deqn{acc = (A+D)/(A+B+C+D)} \deqn{pre = A/(A+B)} 
-#' \deqn{rec = A/(A+C)} \deqn{F1 = (2*pre*rec)/(pre+rec)} 
-#' \deqn{mcc = (A*D - B*C)/sqrt((A+B)*(A+C)*(D+B)*(D+C))}
+#' The formulas used here for the label = "Yes Event" are:
 #'
-#' @return A data.frame with classification evaluation statistics is returned.  
+#' \deqn{pre = A/(A+B)} \deqn{rec = A/(A+C)} 
+#' \deqn{F1 = (2*pre*rec)/(pre+rec)}
+#' \deqn{acc = (A+D)/(A+B+C+D)}
+#' \deqn{mcc = (A*D-B*C)/sqrt((A+B)*(C+D)*(A+C)*(B+D))}
+#' 
+#' Metrics analogous to those described above are calculated for the label
+#' "No Event", and the weighted average (averaging the support-weighted mean
+#' per label) and macro average (averaging the unweighted mean per label) are
+#' also provided.
 #'
-#' @export
+#' @return A list of 3 objects:
+#' \enumerate{
+#' \item "CM", the confusion matrix between observed and predicted counts.
+#' \item "stats", a data.frame with the classification evaluation statistics.
+#' \item "cls", a data.frame with the predicted probabilities, predicted
+#' labels and true labels of the categorical target variable.
+#' }
 #'
-#' @author Mario Grassi \email{mario.grassi@unipv.it}
+#' @author Barbara Tarantino \email{barbara.tarantino@unipv.it}
 #'
 #' @references 
 #' 
 #' Sammut, C. & Webb, G. I. (eds.) (2017). Encyclopedia of Machine Learning 
 #' and Data Mining. New York: Springer. ISBN: 978-1-4899-7685-7 
 #' 
-#' Chicco, D., Jurman, G. (2020) The advantages of the Matthews correlation 
-#' coefficient (MCC) over F1 score and accuracy in binary classification 
-#' evaluation. BMC Genomics 21, 6. 
-#' 
 #' @examples
 #'
 #' \donttest{
-#' # Load Amyotrophic Lateral Sclerosis (ALS)
-#' data<- alsData$exprs; dim(data)
+#' # Load Sachs data (pkc)
+#' ig<- sachs$graph
+#' data<- sachs$pkc
 #' data<- transformData(data)$data
-#' group<- alsData$group; table (group)
-#' ig<- alsData$graph; gplot(ig)
+#' group<- sachs$group
 #' 
 #' #...with train-test (0.5-0.5) samples
 #' set.seed(123)
 #' train<- sample(1:nrow(data), 0.5*nrow(data))
 #' 
-#' #...with a binary outcome (1=case, 0=control)
-#' ig1<- mapGraph(ig, type = "outcome"); gplot(ig1)
-#' outcome<- group; table(outcome)
-#' data1<- cbind(outcome, data); data1[1:5,1:5]
+#' #...with a categorical (as.factor) variable (C=2)
+#' outcome<- factor(ifelse(group == 0, "control", "case"))
+#' res<- SEMml(ig, data[train, ], outcome[train], algo="rf")
+#' pred<- predict(res, data[-train, ], outcome[-train], verbose=TRUE)
 #' 
-#' res <- SEMml(ig1, data1, train, algo="rf")
-#' mse <- predict(res, data1[-train, ])
-#' yobs<- group[-train]
-#' yhat<- mse$Yhat[ ,"outcome"]
+#' yobs<- outcome[-train]
+#' yhat<- pred$Yhat[ ,levels(outcome)]
+#' cls<- classificationReport(yobs, yhat)
+#' cls$CM
+#' cls$stats
+#' head(cls$cls)
 #'
-#' # ... evaluate predictive benchmark (sp, se, acc, mcc)
-#' benchmark(yobs, yhat, thr=0, F1=FALSE)
+#' #...with predicted probabiliy density plots, if C=2
+#' cls<- classificationReport(yobs, yhat, verbose=TRUE)
 #' 
-#' # ... evaluate predictive benchmark (pre, rec, f1, mcc)
-#' benchmark(yobs, yhat, thr=0, F1=TRUE)
-#' 
-#' #... with confusion matrix table as input
-#' ypred<- ifelse(yhat < 0, 0, 1)
-#' benchmark(CT=table(yobs, ypred), F1=TRUE)
-#' 
-#' #...with density plots of yhat per group
-#' #old.par <- par(no.readonly = TRUE)
-#' benchmark(yobs, yhat, thr=0, F1=FALSE, verbose = TRUE)
-#' #par(old.par)
+#' #...with a categorical (as.factor) variable (C=3)
+#' group[1:400]<- 2; table(group)
+#' outcome<- factor(ifelse(group == 0, "control",
+#'					ifelse(group == 1, "case1", "case2")))
+#' res<- SEMml(ig, data[train, ], outcome[train], algo="rf")
+#' pred<- predict(res, data[-train, ], outcome[-train], verbose=TRUE)
+#'
+#' yobs<- outcome[-train]
+#' yhat<- pred$Yhat[ ,levels(outcome)]
+#' cls<- classificationReport(yobs, yhat)
+#' cls$CM
+#' cls$stats
+#' head(cls$cls)
 #' }
 #'
 #' @export
 #'
-
-benchmark<- function(yobs, yhat, CT=NULL, thr=0, F1=TRUE, verbose=FALSE, ...)
+classificationReport<- function(yobs, yhat, CM=NULL, verbose = FALSE, ...)
 {  
-	# Confusion 2x2 table
-	if (inherits(CT, "table")){
-	 CT<- CT
-	}else{
-	 yobs<- factor(yobs, levels = c(0,1))
-	 if (thr == 0) {
-		thr<- (mean(yhat[yobs==0]) + mean(yhat[yobs==1]))/2
-	 } else if (thr == 0.5) {
-		wp1<- table(yobs)[2] / length(yobs)
-		yprob<- exp(yhat)/(1 + exp(yhat))
-		yhat<- classadjust(yprob, wrongprob1=wp1, trueprob1=wp1)
-	 }
-	 ypred<- ifelse(yhat < thr, 0, 1)
-	 ypred<- factor(ypred, levels = c(0,1))
-	 CT<- table(yobs,ypred)
-	}
-
-	if (verbose) print(CT)
-	message()
-	a<- as.numeric(CT[2,2]) #TP
-	b<- as.numeric(CT[2,1]) #FN
-	c<- as.numeric(CT[1,2]) #FP
-	d<- as.numeric(CT[1,1]) #TN
-	
-	sp<- d/(c+d) # Specificity, TN/(TN+FP)
-	se<- a/(a+b) # Sensitivity, TP/(TP+FN)
-	pre<- a/(a+c) # Precision, TP/(TP+FP)
-	rec<- a/(a+b) # Recall, TP/(TP+FN)
-	acc<- (a+d)/(a+b+c+d) # Accuracy, (TP+TN)/n
-	f1<- (2*rec*pre)/(rec+pre) # F1=harmonic accuracy
-	mcc<- (a*d - b*c)/sqrt((a+c)*(a+b)*(d+c)*(d+b)) # MCC
-	
-	if (verbose) dplot(yobs=yobs, yhat=yhat, thr=thr, fp=(1-sp), fn=(1-se))
-	if (F1 == TRUE) return(data.frame(pre, rec, f1, mcc))
-	if (F1 == FALSE) return(data.frame(sp, se, acc, mcc))
+  # CxC Confusion Matrix
+  if (inherits(CM, "table")){
+    cm <- CM
+  }else{ 
+    expit <- apply(yhat, 2, function(x) exp(x)/(1+exp(x)))
+    prob <- apply(expit, 2, function(x) x/apply(expit,1,sum))
+    labels <- colnames(prob)
+    pred <- apply(prob, 1, function(x) labels[which.max(x)])
+    cm <- table(yobs, pred)
+    if (nrow(cm) != ncol(cm)){
+      message("confusion table RxC is not a confusion matrix CxC!")
+      return(list(CM=matrix(0, nrow=nrow(cm), ncol=nrow(cm))))
+    }
+  }
+  if (verbose) {
+    print(cm)
+    message()
+  }
+  
+  n <- sum(cm) # number of observations
+  nc <- nrow(cm) # number of classes
+  correct <- diag(cm) # number of correctly classified obs per class 
+  x <- rowSums(cm) # number of obs per class
+  y <- colSums(cm) # number of predictions per class
+  support <- x # n actual observation per class
+  support_prop <- x / n # n actual observation per class over total 
+  
+  # Per-class precision recall f1
+  precision <- correct / y 
+  recall <- correct / x 
+  f1 <- 2 * precision * recall / (precision + recall)
+  accuracy <- sum(correct) / n
+  
+  # Macro-averaged Metrics
+  macroPrecision <- mean(precision, na.rm=TRUE)
+  macroRecall <- mean(recall, na.rm=TRUE)
+  macroF1 <- mean(f1, na.rm=TRUE)
+  
+  # Weighted-averaged Metrics
+  weightPrecision <- sum(diag(outer(precision,support_prop)))
+  weightRecall <- sum(diag(outer(recall,support_prop)))
+  weightF1 <- sum(diag(outer(f1,support_prop)))
+  
+  # Multiclass Matthew's Correlation Coefficient
+  cov_x_y <- sum(correct) * n - sum(diag(outer(x, y)))
+  cov_y_y <- n * n - sum(diag(outer(y, y)))
+  cov_x_x <- n * n - sum(diag(outer(x, x)))
+  denom <- sqrt(cov_x_x * cov_y_y)
+  denom <- ifelse(denom == 0, 1, denom)
+  mcc <- cov_x_y / denom
+  
+  res1 <- data.frame(precision, recall, f1, accuracy, mcc, support, support_prop)
+  res2 <- data.frame(precision=c(macroPrecision, weightPrecision),
+                     recall=c(macroRecall, weightRecall),
+                     f1=c(macroF1, weightF1),
+                     accuracy=c(accuracy, accuracy),
+                     mcc=c(mcc,mcc),
+                     support=c(rep(sum(support),2)),
+                     support_prop=c(rep(1,2)))
+  rownames(res2) <- c("macro avg", "weighted avg")
+  res <- rbind(res1,res2)
+  
+  if (inherits(CM, "table")) {
+    cls <- NULL
+  }else{
+    cls <- data.frame(prob, pred, yobs)
+    if (verbose == TRUE & nrow(res1) == 2) {
+      dplot(yobs, prob, 0.5, res1$recall)
+    }
+  }
+  
+  return(list(CM = cm, stats = res, cls = cls))
 }
 
-dplot<- function(yobs, yhat, thr, fp, fn, ...)
+dplot<- function(yobs, yhat, thr, rec, ...)
 { 
-	# density plot of yhat per yobs(0,1)
-	#yobs<- ifelse(yobs == "-", 0, 1)
-	xlim <- c(min(yhat)-0.5, max(yhat)+0.5)
-	err <- c(paste0("FP = ",round(fp,3)),
-			 paste0("FN = ",round(fn,3)))
-	old.par <- par(no.readonly = TRUE)
-	on.exit(par(old.par))
-	par(mfrow=c(2,1), mar=rep(3,4))
-	for (c in 0:1) { 
-		d <- density(yhat[yobs == c])
-		x <- d$x
-		y <- d$y/max(d$y)
-		main <- paste0("group ", c, " (", err[c+1], ")")
-		plot(x, y, type="l", xlim=xlim, main=main)
-		polygon(x, y, col="gray", border="gray")
-		if (c == 0) {
-		 region.x <- x[thr <= x & x <= xlim]
-		 region.y <- y[thr <= x & x <= xlim]
-		}else{
-		 region.x <- x[xlim <= x & x <= thr]
-		 region.y <- y[xlim <= x & x <= thr]
-		}
-		region.x <- c(region.x[1], region.x, tail(region.x,1))
-		region.y <- c(0, region.y, 0)
-		polygon(region.x, region.y, density=-1, col="red") 
-	}
+  # density plot of yhat per yobs(1,2)
+  label <- levels(yobs)
+  cls <- ifelse(yobs == label[1], 1, 2)
+  err <- c(paste0("recall = ", round(rec[1],3)),
+           paste0("recall = ", round(rec[2],3)))
+  xlim <- c(0,1)
+  old.par <- par(no.readonly = TRUE)
+  on.exit(par(old.par))
+  par(mfrow=c(2,1), mar=rep(4.5,4))
+  for (c in 1:2) {
+    d <- density(yhat[cls == c, c])
+    x <- d$x
+    y <- d$y/max(d$y)
+    plot(x, y, type = "l", xlim = xlim,
+         xlab = paste0("probability (Y=", label[c],")"),
+         main = list(paste0(label[c], " (", err[c], ")"),
+                     cex = 1.3, col = "black", font = 2))
+    polygon(x, y, col="gray", border="gray")
+    #if (c == 1) {
+    # region.x <- x[thr <= x & x <= xlim[2]]
+    # region.y <- y[thr <= x & x <= xlim[2]]
+    #}else{
+    region.x <- x[xlim[1] <= x & x <= thr]
+    region.y <- y[xlim[1] <= x & x <= thr]
+    #}
+    region.x <- c(region.x[1], region.x, tail(region.x,1))
+    region.y <- c(0, region.y, 0)
+    polygon(region.x, region.y, density=-1, col="red") 
+  }
 }
 
-classadjust <- function(condprobs, wrongprob1, trueprob1)
-{
-	wrongratio <- (1 - wrongprob1)/wrongprob1
-	fratios <- (1/condprobs - 1) * (1/wrongratio)
-	trueratios <- (1 - trueprob1)/trueprob1
-	return(1/(1 + trueratios * fratios))
+#' @title Cross-validation of linear SEM, ML or DNN training models
+#'
+#' @description The function does a R-repeated K-fold cross-validation
+#' of \code{SEMrun()}, \code{SEMml()} or \code{SEMdnn()} models. 
+#'
+#' @param models A named list of model fitting objects from \code{SEMrun()},
+#' \code{SEMml()} or \code{SEMdnn()} function, with default group=NULL (for
+#' \code{SEMrun()} or outcome=NULL (for \code{SEMml()} or \code{SEMdnn()}).
+#' @param outcome A character vector (as.factor) of labels for a categorical
+#' output (target). If NULL (default), the categorical output (target) will
+#' not be considered.
+#' @param K A numerical value indicating the number of k-fold to create. 
+#' @param R A numerical value indicating the number of repetitions for the k-fold
+#' cross-validation. 
+#' @param metric A character value indicating the metric for boxplots display, i.e.:
+#' "amse", "r2", or "srmr", for continuous outcomes, and "f1", "accuracy" or "mcc",
+#' for a categorical outcome (default = NULL).
+#' @param ncores Number of cpu cores (default = 2).
+#' @param verbose Output to console boxplots and summarized results (default = FALSE).
+#' @param ... Currently ignored.
+#'
+#' @details Easy-to-use model comparison and selection of SEM, ML or DNN models,
+#' in which several models are defined and compared in a R-repeated K-fold
+#' cross-validation procedure. The winner model is selected by reporting the mean
+#' predicted performances across all runs, as outline in de Rooij & Weeda (2020).
+#'
+#' @return A list of 2 objects: (1) "stats", a list with performance evaluation metrics.
+#' If \code{outcome=FALSE}, mean and (0.025;0.0975)-quantiles of amse, r2, and srmr
+#' across folds and repetitions are reported; if \code{outcome=TRUE}, mean and
+#' (0.025;0.0975)-quantiles of f1, accuracy and mcc from confusion matrix averaged across
+#' all repetitions are reported; and (2) "PE", a data.frame of repeated cross-validation
+#' results.
+#'
+#' @author Mario Grassi \email{mario.grassi@unipv.it}
+#'
+#' @references 
+#' 
+#' de Rooij M, Weeda W. Cross-Validation: A Method Every Psychologist Should Know.
+#' Advances in Methods and Practices in Psychological Science. 2020;3(2):248-263.
+#' doi:10.1177/2515245919898466
+#'
+#' @examples
+#'
+#' \donttest{
+#' # Load Amyotrophic Lateral Sclerosis (ALS)
+#' ig<- alsData$graph
+#' data<- alsData$exprs
+#' data<- transformData(data)$data
+#' group<- alsData$group
+#' 
+#' # ... with continuous outcomes 
+#'
+#' res1 <- SEMml(ig, data, algo="sem")
+#' res2 <- SEMml(ig, data, algo="tree")
+#' res3 <- SEMml(ig, data, algo="rf")
+#' res4 <- SEMml(ig, data, algo="nn")
+#' 
+#' models <- list(res1,res2,res3,res4)
+#' names(models) <- c("sem","tree","rf","nn")
+#' 
+#' res.cv1 <- crossValidation(models, outcome=NULL, K=5, R=10)
+#' print(res.cv1$stats)
+#' 
+#' #... with a categorical (as.factor) outcome
+#' 
+#' outcome <- factor(ifelse(group == 0, "control", "case"))
+#' res.cv2 <- crossValidation(models, outcome=outcome, K=5, R=10)
+#' print(res.cv2$stats)
+#' }
+#'
+#' @export
+#'
+crossValidation <- function(models, outcome=NULL, K=5, R=1, metric=NULL, ncores=2, verbose=FALSE, ...)
+{ 
+  message('Running Cross-validation...')
+  # CV without repeats
+  if (R == 1) {
+    resk <- crossValidationR1(models, outcome, K, seed=NULL)
+    if (verbose) print(round(resk$stats,3))
+    return(resk)
+  }
+  
+  # Parallel loop of repeats
+  #require(foreach)
+  cl <- parallel::makeCluster(ncores)
+  doSNOW::registerDoSNOW(cl)
+  opts <- list(progress = pb(nrep = R, snow = TRUE))
+  
+  resr <- foreach(r=1:R, .options.snow=opts) %dopar% {
+    crossValidationR1(models, outcome, K, seed=NULL)$stats
+  }
+  
+  parallel::stopCluster(cl)
+  
+  RESR<- do.call(rbind, lapply(resr, as.data.frame))
+  rownames(RESR) <- NULL
+  M <- length(models)
+  Repeats <- rep(1:R, each=M)
+  Models <- rep(1:M, times=R)
+  PE <- cbind(Repeats, Models, RESR)
+  
+  # make output list
+  metrics <- colnames(PE)[3:5]
+  OUT <- list()
+  for (i in 1:3) {
+    out <- NULL
+    winmat <- matrix(0, ncol = M, nrow = R)
+    
+    for (r in 1:R) {
+      pe <- PE[PE$Repeats == r, i+2]
+      if (metrics[i] == "amse" | metrics[i] == "srmr") {
+        winmat[r, which.min(pe)] <- 1
+      } else {
+        winmat[r ,which.max(pe)] <- 1
+      }
+    }
+    Wins <- apply(winmat,2,sum)
+    
+    for (k in 1:M) {
+      pe <- PE[PE$Models == k, i+2]
+      q025 <- round(quantile(pe, .025, na.rm = TRUE),3)
+      Mean <- round(mean(pe, na.rm = TRUE),3) 
+      q975 <- round(quantile(pe, .975, na.rm = TRUE),3)
+      out<- rbind(out, cbind(q025, Mean, q975))
+    }
+    rownames(out) <- names(models)
+    colnames(out) <- c("2.5%", "mean", "97.5%")
+    
+    OUT[[i]]<- cbind(Wins, out)
+  }
+  names(OUT) <- metrics
+  if (verbose) print(OUT)
+  
+  #make boxplot
+  if (verbose & !is.null(metric)) {
+    # basic boxplot
+    x <- factor(PE$Models, labels = names(models))
+    y <- PE[, which(colnames(PE) == metric)]
+    wins <- OUT[which(names(OUT) == metric)][[1]][,1]
+    boxplot(y~x, ylab=metric, xlab="Model", col=terrain.colors(4))
+    # add data points
+    for (i in 1:M) {
+      level <- levels(x)[i]
+      value <- y[x == level]
+      myjitter <- jitter(rep(i, R), amount = 1/(2*M))
+      points(myjitter, value, pch=1, col=rgb(0,0,0,0.9))
+    }
+    axis(3, seq(1, M, length.out = M), wins)
+    mtext("Number of Wins", 3, 3)
+  }
+  
+  return(list(stats = OUT, PE = PE))
 }
 
-getFolds <- function(Y, K, ...)
+crossValidationR1 <- function(models, outcome, K, seed = NULL, ...)
 {
-	# split samples into groups
-	if (length(table(Y)) == 2) {
-	 ygrouped <- split(seq(Y), Y)
-	}else{
-	 ygrouped <- list(all=seq(length(Y)))
-	}
-	
-	# makes no sense to have more folds than entries in largest group
-	groupsize <- sapply(ygrouped, length)
-	nfolds <- min(K, max(groupsize))
-	if (K != nfolds) message("Number of folds:", nfolds)
-	
-	# assign the members of each group evenly to the folds
-	m <- NULL
-	for (i in 1:length(ygrouped)) {
-	 a <- ceiling(groupsize[i]/nfolds)
-	 ridx <- sample.int(groupsize[i], groupsize[i])
-	 v <- c( rep(NA, nfolds*a-groupsize[i]), ygrouped[[i]][ridx] ) # pad with NAs
-	 ridx <- sample.int(nfolds, nfolds) # reshuffle column containing the NAs
-	 v[1:nfolds] <- v[ridx]
-	 m <- c(m,v)
-	}
-	m <- matrix(m, nrow=nfolds) # all NAs of a group are all in one column
-	
-	folds <-  vector("list", nfolds)
-	for (j in 1:nfolds)  {
-	 keep <- !is.na(m[j, ])
-	 folds[[j]] <- m[j, keep]
-	}
-	
-	return( folds )
+  #set seeds and folds
+  if (is.null(seed)) seed <- runif(1,0,1000)
+  set.seed(seed)
+  #create folds
+  C<- length(levels(outcome))
+  n<- nrow(models[[1]]$data)
+  if (C == 0) {
+    idx<- createFolds(y=rnorm(n), k=K) #N.B. list of test indices!
+  }else{
+    idx<- createFolds(y=outcome, k=K) #N.B. list of test indices!
+  }
+  
+  # Initialise M-models loop 
+  resm<- list()
+  for (m in 1:length(models)) { #m=2 
+    #message(names(models)[m])
+    object<- models[[m]]
+    graph<- models[[m]]$graph
+    data<- models[[m]]$data
+    if (!is.null(outcome)) {
+      out<- model.matrix(~outcome-1)
+      colnames(out)<- gsub("outcome", "", colnames(out))
+      data<- cbind(out, data)
+      graph<- mapGraph(graph, type="outcome", C=ncol(out))
+      V(graph)$name[igraph::degree(graph, mode="out") == 0]<- colnames(out)
+    }
+    
+    # Initialise K-fold cross-validation loop
+    pb <- pb(nrep = K, snow = FALSE)
+    resk <- list()
+    for (k in 1:K) {
+      #message("  k-fold = ", k)
+      pb$tick()
+      train<- c(1:nrow(data))[-idx[[k]]]
+      if (inherits(object, "SEM")) {
+        res0<- quiet(SEMgraph::SEMrun(graph, data[train, ], algo="ricf", n_rep=0))
+      }
+      if (inherits(object, "ML")) {
+        ml0<- c("rpart", "ranger", "xgb.Booster", "nnet", "citodnn")
+        ml1<- c("tree", "rf", "xgb", "nn", "dnn")
+        for (ml in 1:5){
+          if (inherits(object$model[[1]], ml0[ml])) algo<- ml1[ml]
+        }
+        res0<- quiet(SEMdeep::SEMml(graph, data[train, ], algo = algo, vimp = FALSE))
+      }
+      if (inherits(object, "DNN")) {
+        loss<- object$model[[1]]$loss$call
+        device<- object$model[[1]]$device
+        mp<- object$model[[1]]$model_properties
+        mt<- object$model[[1]]$training_properties
+        
+        res0<- quiet(SEMdeep::SEMdnn(graph, data[train, ], cowt = FALSE, thr = NULL, 
+                                     hidden = mp[[3]], link = mp[[4]], bias = mp[[5]], dropout = mp[[6]],
+                                     lr = mt[[1]], optimizer = mt[[3]], epochs = mt[[4]], early_stopping = mt[[5]],
+                                     loss = loss, validation = mt[[7]], lambda = mt[[8]], alpha = mt[[9]],
+                                     device = device, verbose = FALSE))		
+      }
+      yhat0<- predict(res0, data[-train, ])# dim(yhat0$Yhat)
+      
+      if (is.null(outcome)) {
+        resk[[k]]<- data.frame(amse=yhat0$PE[1],r2=yhat0$PE[2],srmr=yhat0$PE[3])
+      }else{
+        yobs<- outcome[-train]
+        yhat<- yhat0$Yhat[ ,levels(outcome)]
+        resk[[k]]<- SEMdeep::classificationReport(yobs, yhat)$CM
+      }
+    } # end K-folds loop
+    
+    if (is.null(outcome)) {
+      RESK<-  do.call(rbind, lapply(resk, as.data.frame))
+    }else{
+      CMr<- base::Reduce('+', resk)
+      RESK<- SEMdeep::classificationReport(CM=CMr)$stats[C+2,c(3:5)]
+    }
+    resm[[m]]<- apply(RESK, 2, mean)
+    message(paste0(names(models)[m], " done."))
+  } # end M-models loop
+  
+  RESM<- do.call(cbind, lapply(resm, matrix))
+  rownames(RESM)<- names(resm[[1]])
+  colnames(RESM)<- names(models)
+  
+  return(list(stats = t(RESM), PE = NULL))
+}
+
+createFolds <- function (y, k, list = TRUE, returnTrain = FALSE, ...) 
+{
+  # Here's a modified function from "caret" package @ Max Kuhn
+  
+  if (is.numeric(y)) {
+    cuts <- floor(length(y)/k)
+    if (cuts < 2) 
+      cuts <- 2
+    if (cuts > 5) 
+      cuts <- 5
+    breaks <- unique(quantile(y, probs = seq(0, 1, length = cuts)))
+    y <- cut(y, breaks, include.lowest = TRUE)
+  }
+  if (k < length(y)) {
+    y <- factor(as.character(y))
+    numInClass <- table(y)
+    foldVector <- vector(mode = "integer", length(y))
+    for (i in 1:length(numInClass)) { #i=1
+      min_reps <- numInClass[i]%/%k
+      if (min_reps > 0) {
+        spares <- numInClass[i]%%k
+        seqVector <- rep(1:k, min_reps)
+        if (spares > 0) 
+          seqVector <- c(seqVector, sample(1:k, spares))
+        foldVector[which(y == names(numInClass)[i])] <- sample(seqVector)
+      }
+      else {
+        foldVector[which(y == names(numInClass)[i])] <- sample(1:k, 
+                                                               size = numInClass[i])
+      }
+    }
+  }
+  else foldVector <- seq(along = y)
+  if (list) {
+    out <- split(seq(along = y), foldVector)
+    names(out) <- paste("Fold", gsub(" ", "0", format(seq(along = out))), 
+                        sep = "")
+    if (returnTrain) 
+      out <- lapply(out, function(data, y) y[-data], y = seq(along = y))
+  }
+  else out <- foldVector
+  
+  return(out)
+}
+
+pb <- function(nrep, snow = TRUE)
+{
+  pb <- progress::progress_bar$new(
+    format = "(:spin) completed :current out of :total tasks [ :percent][ :elapsed]",
+    total = nrep,      # Total number of ticks to complete.
+    clear = TRUE,      # If TRUE, clears the bar when finish
+    width = 80,        # Width of the progress bar (default=92)
+    show_after = 0)    # Secs after which the bar is shown
+  if (snow) {
+    progress <- function(x) pb$tick(tokens = list(trial = (1:nrep)[x]))
+  }else{
+    progress <- pb
+  }
+  return(progress)
 }
 
 quiet <- function(..., messages=FALSE, cat=FALSE){

@@ -4,20 +4,23 @@
 \alias{mapGraph}
 \title{Map additional variables (nodes) to a graph object}
 \usage{
-mapGraph(graph, type = "outcome", LV = NULL, f = NULL, ...)
+mapGraph(graph, type, C = NULL, LV = NULL, f = NULL, verbose = FALSE, ...)
 }
 \arguments{
 \item{graph}{An igraph object.}
 
 \item{type}{A character value specifying the type of mapping. Five 
-types can be specified. If \code{type = "source"} is specified, an 
-additional source node (or more) is added to the graph. If 
-\code{type = "group"}, an additional group source node is added. If
-\code{type = "outcome"} (default), a prediction sink node is mapped
-to the graph. If \code{type = "LV"}, a LV source node is included (where
-the number of LV depends on the LV argument). If \code{type = "clusterLV"},
-a series of clusters for the data are computed and a different LV source
-node is added separately for each cluster.}
+types can be specified.
+\enumerate{
+\item "source", source nodes are linked to sink nodes of the graph.
+\item "group", an additional group source node is added to the graph.
+\item "outcome", additional c=1,2,...,C sink nodes are added to the graph.
+\item "LV", additional latent variable (LV) source nodes are added to the graph. 
+\item "clusterLV", a series of clusters for the data are computed
+and a different LV source node is added separately for each cluster.
+}}
+
+\item{C}{the number of labels of the categorical sink node (default = NULL).}
 
 \item{LV}{The number of LV source nodes to add to the graph. This argument 
 needs to be specified when \code{type = "LV"}. When \code{type = "clusterLV"}
@@ -26,6 +29,8 @@ the LV number is defined internally equal to the number of clusters.
 
 \item{f}{A formula object (default = NULL). A new graph object is created
 according to the specified formula object.}
+
+\item{verbose}{If TRUE disply the mapped graph (default = FALSE)}
 
 \item{...}{Currently ignored.}
 }
@@ -37,29 +42,29 @@ mapped node variables.
 The function insert additional nodes to a graph object.
 Among the node types, additional source or sink nodes can be added. 
 Regarding the former, source nodes can represent: (i) data variables; 
-(ii) a group variable; (iii) Latent Variables (LV). For the latter, an 
-outcome variable, representing the prediction of interest, can be added. 
-Moreover, \code{mapGraph()} can also create a new graph object starting
-from a compact symbolic formula.
+(ii) a group variable; (iii) Latent Variables (LV). For the latter,
+Sink nodes represent the levels of a categorical outcome variable and
+are linked with all graph nodes.' Moreover, \code{mapGraph()} can also
+create a new graph object starting from a compact symbolic formula.
 }
 \examples{
 
 # Load Amyotrophic Lateral Sclerosis (ALS)
 ig<- alsData$graph; gplot(ig)
 
-# ... map source nodes to ALS graph 
+# ... map source nodes to sink nodes of ALS graph 
 ig1 <- mapGraph(ig, type = "source"); gplot(ig1, l="dot")
 
 # ... map group source node to ALS graph 
 ig2 <- mapGraph(ig, type = "group"); gplot(ig2, l="fdp")
 
-# ... map outcome sink to ALS graph 
-ig3 <- mapGraph(ig, type = "outcome"); gplot(ig3, l="dot")
+# ... map outcome sink (C=2) to ALS graph 
+ig3 <- mapGraph(ig, type = "outcome", C=2); gplot(ig3, l="fdp")
 
 # ... map LV source nodes to ALS graph 
 ig4 <- mapGraph(ig, type = "LV", LV = 3); gplot(ig4, l="fdp")
 
-# ... map LV source nodes to the clusters of ALS graph 
+# ... map LV source nodes to the cluster nodes of ALS graph 
 ig5 <- mapGraph(ig, type = "clusterLV"); gplot(ig5, l="dot")
 
 # ... create a new graph with the formula variables

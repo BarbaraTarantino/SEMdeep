@@ -4,7 +4,7 @@
 \alias{predict.DNN}
 \title{SEM-based out-of-sample prediction using layer-wise DNN}
 \usage{
-\method{predict}{DNN}(object, newdata, verbose = FALSE, ...)
+\method{predict}{DNN}(object, newdata, newoutcome = NULL, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{A model fitting object from \code{SEMdnn()} function.}
@@ -12,16 +12,21 @@
 \item{newdata}{A matrix containing new data with rows corresponding to
 subjects, and columns to variables.}
 
+\item{newoutcome}{A new character vector (as.factor) of labels for a categorical
+output (target) (default = NULL).}
+
 \item{verbose}{Print predicted out-of-sample MSE values (default = FALSE).}
 
 \item{...}{Currently ignored.}
 }
 \value{
-A list of 2 objects:
+A list of 3 objects:
 \enumerate{
-\item "PE", vector of the prediction error equal to the Mean Squared Error
-(MSE) for each out-of-bag prediction. The first value of PE is the AMSE,
-where we average over all (sink and mediators) graph nodes.
+\item "PE", vector of the amse = average MSE over all (sink and mediators)
+graph nodes; r2 = 1 - amse; and srmr= Standardized Root Means Square Residual
+between the out-of-bag correlation matrix and the model correlation matrix.
+\item "mse", vector of the Mean Squared Error (MSE) for each out-of-bag
+prediction of the sink and mediators graph nodes.
 \item "Yhat", the matrix of continuous predicted values of graph nodes  
 (excluding source nodes) based on out-of-bag samples. 
 }
@@ -35,48 +40,44 @@ Predict method for DNN objects.
 if (torch::torch_is_installed()){
 
 # Load Amyotrophic Lateral Sclerosis (ALS)
-data<- alsData$exprs; dim(data)
+ig<- alsData$graph
+data<- alsData$exprs
 data<- transformData(data)$data
-ig<- alsData$graph; gplot(ig)
 group<- alsData$group 
 
 #...with train-test (0.5-0.5) samples
 set.seed(123)
 train<- sample(1:nrow(data), 0.5*nrow(data))
+#ncores<- parallel::detectCores(logical = FALSE)
 
 start<- Sys.time()
-dnn0 <- SEMdnn(ig, data, train, cowt = FALSE, thr = NULL,
-			#loss = "mse", hidden = 5*K, link = "selu",
-			loss = "mse", hidden = c(10, 10, 10), link = "selu",
-			validation = 0, bias = TRUE, lr = 0.01,
-			epochs = 32, device = "cpu", verbose = TRUE)
+dnn0 <- SEMdnn(ig, data[train, ],
+			# hidden = 5*K, link = "selu", bias = TRUE, 
+			hidden = c(10,10,10), link = "selu", bias = TRUE, 
+			validation = 0, epochs = 32, ncores = 2)
 end<- Sys.time()
 print(end-start)
-mse0 <- predict(dnn0, data[-train, ], verbose=TRUE)
+pred.dnn <- predict(dnn0, data[-train, ], verbose=TRUE)
 
 # SEMrun vs. SEMdnn MSE comparison
-sem0 <- SEMrun(ig, data[train, ], SE="none", limit=1000)
-mse0 <- predict(sem0, data[-train,], verbose=TRUE)
+sem0 <- SEMrun(ig, data[train, ], algo="ricf", n_rep=0)
+pred.sem <- predict(sem0, data[-train,], verbose=TRUE)
 
-#...with a binary outcome (1=case, 0=control)
-
-ig1<- mapGraph(ig, type="outcome"); gplot(ig1)
-outcome<- ifelse(group == 0, -1, 1); table(outcome)
-data1<- cbind(outcome, data); data1[1:5,1:5]
+#...with a categorical (as.factor) outcome
+outcome <- factor(ifelse(group == 0, "control", "case")); table(outcome) 
 
 start<- Sys.time()
-dnn1 <- SEMdnn(ig1, data1, train, cowt = TRUE, thr = NULL,
-			#loss = "mse", hidden = 5*K, link = "selu",
-			loss = "mse", hidden = c(10, 10, 10), link = "selu",
-			validation = 0, bias = TRUE, lr = 0.01,
-			epochs = 32, device = "cpu", verbose = TRUE)
+dnn1 <- SEMdnn(ig, data[train, ], outcome[train],
+			#hidden = 5*K, link = "selu", bias = TRUE,
+			hidden = c(10,10,10), link = "selu", bias = TRUE,
+			validation = 0,  epochs = 32, ncores = 2)
 end<- Sys.time()
 print(end-start)
 
-mse1 <- predict(dnn1, data1[-train, ])
-yobs <- group[-train]
-yhat <- mse1$Yhat[ ,"outcome"]
-benchmark(yobs, yhat, thr=0, F1=FALSE)
+pred <- predict(dnn1, data[-train, ], outcome[-train], verbose=TRUE)
+yhat <- pred$Yhat[ ,levels(outcome)]; head(yhat)
+yobs <- outcome[-train]; head(yobs)
+classificationReport(yobs, yhat, verbose=TRUE)$stats
 }
 }
 

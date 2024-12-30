@@ -4,26 +4,31 @@
 \alias{predict.ML}
 \title{SEM-based out-of-sample prediction using node-wise ML}
 \usage{
-\method{predict}{ML}(object, newdata, verbose = FALSE, ...)
+\method{predict}{ML}(object, newdata, newoutcome = NULL, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{A model fitting object from \code{SEMml()} function.}
 
-\item{newdata}{A matrix containing new data with rows corresponding to
-subjects, and columns to variables.}
+\item{newdata}{A matrix containing new data with rows corresponding to subjects,
+and columns to variables.}
+
+\item{newoutcome}{A new character vector (as.factor) of labels for a categorical
+output (target)(default = NULL).}
 
 \item{verbose}{Print predicted out-of-sample MSE values (default = FALSE).}
 
 \item{...}{Currently ignored.}
 }
 \value{
-A list of 2 objects:
+A list of 3 objects:
 \enumerate{
-\item "PE", vector of the prediction error equal to the Mean Squared Error
-(MSE) for each out-of-bag prediction. The first value of PE is the AMSE,
-where we average over all (sink and mediators) graph nodes.
+\item "PE", vector of the amse = average MSE over all (sink and mediators)
+graph nodes; r2 = 1 - amse; and srmr= Standardized Root Means Squared Residual
+between the out-of-bag correlation matrix and the model correlation matrix.
+\item "mse", vector of the Mean Squared Error (MSE) for each out-of-bag
+prediction of the sink and mediators graph nodes.
 \item "Yhat", the matrix of continuous predicted values of graph nodes  
-(excluding source nodes) based on out-of-bag samples. 
+(excluding source nodes) based on out-of-bag samples.
 }
 }
 \description{
@@ -33,9 +38,10 @@ Predict method for ML objects.
 
 \donttest{
 # Load Amyotrophic Lateral Sclerosis (ALS)
-data<- alsData$exprs; dim(data)
+ig<- alsData$graph
+data<- alsData$exprs
 data<- transformData(data)$data
-ig<- alsData$graph; gplot(ig)
+group<- alsData$group
 
 #...with train-test (0.5-0.5) samples
 set.seed(123)
@@ -43,26 +49,31 @@ train<- sample(1:nrow(data), 0.5*nrow(data))
 
 start<- Sys.time()
 # ... rf
-res1<- SEMml(ig, data, train, algo="rf", vimp=FALSE)
+res1<- SEMml(ig, data[train, ], algo="rf", vimp=FALSE)
 mse1<- predict(res1, data[-train, ], verbose=TRUE)
 
 # ... xgb
-res2<- SEMml(ig, data, train, algo="xgb", vimp=FALSE)
+res2<- SEMml(ig, data[train, ], algo="xgb", vimp=FALSE)
 mse2<- predict(res2, data[-train, ], verbose=TRUE)
 
 # ... nn
-res3<- SEMml(ig, data, train, algo="nn", vimp=FALSE)
+res3<- SEMml(ig, data[train, ], algo="nn", vimp=FALSE)
 mse3<- predict(res3, data[-train, ], verbose=TRUE)
 
-# ... gam
-res4<- SEMml(ig, data, train, algo="gam", vimp=FALSE)
-mse4<- predict(res4, data[-train, ], verbose=TRUE)
-
 # ... sem
-res5<- SEMml(ig, data, train, algo="sem", vimp=FALSE)
-mse5<- predict(res5, data[-train, ], verbose=TRUE)
+res4<- SEMml(ig, data[train, ], algo="sem", vimp=FALSE)
+mse4<- predict(res4, data[-train, ], verbose=TRUE)
 end<- Sys.time()
 print(end-start)
+
+#...with a categorical (as.factor) outcome
+outcome <- factor(ifelse(group == 0, "control", "case")); table(outcome) 
+
+res5 <- SEMml(ig, data[train, ], outcome[train], algo="tree", vimp=TRUE)
+pred <- predict(res5, data[-train, ], outcome[-train], verbose=TRUE)
+yhat <- pred$Yhat[ ,levels(outcome)]; head(yhat)
+yobs <- outcome[-train]; head(yobs)
+classificationReport(yobs, yhat, verbose=TRUE)$stats
 }
 
 }

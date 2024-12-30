@@ -39,11 +39,11 @@ ig<- alsData$graph
 data<- alsData$exprs
 data<- transformData(data)$data
 
+#ncores<- parallel::detectCores(logical = FALSE)
 dnn0 <- SEMdnn(ig, data, train=1:nrow(data), grad = FALSE,
-			#loss = "mse", hidden = 5*K, link = "selu",
-			loss = "mse", hidden = c(10, 10, 10), link = "selu",
-			validation = 0, bias = TRUE, lr = 0.01,
-			epochs = 32, device = "cpu", verbose = TRUE)
+			#hidden = 5*K, link = "selu", bias = TRUE,
+			hidden = c(10, 10, 10), link = "selu", bias =TRUE,
+			validation = 0, epochs = 32, ncores = 2)
 
  for (j in 1:length(dnn0$model)) { 
    nplot(dnn0$model[[j]])
