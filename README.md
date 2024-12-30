@@ -15,6 +15,12 @@ Structural Equation Modeling with Deep Neural Network and Machine Learning
   Gradient (or Connection) weight approach and significance tests of
   network inputs.
 
+<p align="center">
+    <img src="https://github.com/BarbaraTarantino/SEMdeep/blob/master/docs/figures/SEMdeep_workflow.png" width=95% height=95%>
+</p>
+
+&nbsp;  
+
 ## Installation
 
 **SEMdeep** uses the deep learning framework 'torch'. The **torch** package
