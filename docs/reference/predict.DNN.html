@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">SEMdeep</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -54,7 +54,7 @@
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'DNN'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">newdata</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">newdata</span>, newoutcome <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -70,6 +70,11 @@
 subjects, and columns to variables.</p></dd>
 
 
+<dt id="arg-newoutcome">newoutcome<a class="anchor" aria-label="anchor" href="#arg-newoutcome"></a></dt>
+<dd><p>A new character vector (as.factor) of labels for a categorical
+output (target) (default = NULL).</p></dd>
+
+
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Print predicted out-of-sample MSE values (default = FALSE).</p></dd>
 
@@ -80,9 +85,11 @@ subjects, and columns to variables.</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list of 2 objects:</p><ol><li><p>"PE", vector of the prediction error equal to the Mean Squared Error
-(MSE) for each out-of-bag prediction. The first value of PE is the AMSE,
-where we average over all (sink and mediators) graph nodes.</p></li>
+    <p>A list of three objects:</p><ol><li><p>"PE", vector of the amse = average MSE over all (sink and mediators)
+graph nodes; r2 = 1 - amse; and srmr= Standardized Root Means Square Residual
+between the out-of-bag correlation matrix and the model correlation matrix.</p></li>
+<li><p>"mse", vector of the Mean Squared Error (MSE) for each out-of-bag
+prediction of the sink and mediators graph nodes.</p></li>
 <li><p>"Yhat", the matrix of continuous predicted values of graph nodes
 (excluding source nodes) based on out-of-bag samples.</p></li>
 </ol></div>
@@ -98,141 +105,86 @@ where we average over all (sink and mediators) graph nodes.</p></li>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu">torch</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/torch/man/torch_is_installed.html" class="external-link">torch_is_installed</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Load Amyotrophic Lateral Sclerosis (ALS)</span></span></span>
-<span class="r-in"><span><span class="va">data</span><span class="op">&lt;-</span> <span class="va">alsData</span><span class="op">$</span><span class="va">exprs</span>; <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ig</span><span class="op">&lt;-</span> <span class="va">alsData</span><span class="op">$</span><span class="va">graph</span></span></span>
+<span class="r-in"><span><span class="va">data</span><span class="op">&lt;-</span> <span class="va">alsData</span><span class="op">$</span><span class="va">exprs</span></span></span>
 <span class="r-in"><span><span class="va">data</span><span class="op">&lt;-</span> <span class="fu">transformData</span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">$</span><span class="va">data</span></span></span>
-<span class="r-in"><span><span class="va">ig</span><span class="op">&lt;-</span> <span class="va">alsData</span><span class="op">$</span><span class="va">graph</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">group</span><span class="op">&lt;-</span> <span class="va">alsData</span><span class="op">$</span><span class="va">group</span> </span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#...with train-test (0.5-0.5) samples</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">train</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>, <span class="fl">0.5</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">#ncores&lt;- parallel::detectCores(logical = FALSE)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dnn0</span> <span class="op">&lt;-</span> <span class="fu"><a href="SEMdnn.html">SEMdnn</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span>, <span class="va">train</span>, cowt <span class="op">=</span> <span class="cn">FALSE</span>, thr <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
-<span class="r-in"><span>      <span class="co">#loss = "mse", hidden = 5*K, link = "selu",</span></span></span>
-<span class="r-in"><span>      loss <span class="op">=</span> <span class="st">"mse"</span>, hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">10</span>, <span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>,</span></span>
-<span class="r-in"><span>      validation <span class="op">=</span> <span class="fl">0</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>, lr <span class="op">=</span> <span class="fl">0.01</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, device <span class="op">=</span> <span class="st">"cpu"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dnn0</span> <span class="op">&lt;-</span> <span class="fu"><a href="SEMdnn.html">SEMdnn</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>,</span></span>
+<span class="r-in"><span>      <span class="co"># hidden = 5*K, link = "selu", bias = TRUE, </span></span></span>
+<span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>, </span></span>
+<span class="r-in"><span>      validation <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>, ncores <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">mse0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">dnn0</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pred.dnn</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">dnn0</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># SEMrun vs. SEMdnn MSE comparison</span></span></span>
-<span class="r-in"><span><span class="va">sem0</span> <span class="op">&lt;-</span> <span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, SE<span class="op">=</span><span class="st">"none"</span>, limit<span class="op">=</span><span class="fl">1000</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">mse0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">sem0</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>,<span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sem0</span> <span class="op">&lt;-</span> <span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, algo<span class="op">=</span><span class="st">"ricf"</span>, n_rep<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pred.sem</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">sem0</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>,<span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#...with a binary outcome (1=case, 0=control)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">ig1</span><span class="op">&lt;-</span> <span class="fu"><a href="mapGraph.html">mapGraph</a></span><span class="op">(</span><span class="va">ig</span>, type<span class="op">=</span><span class="st">"outcome"</span><span class="op">)</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">outcome</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">group</span> <span class="op">==</span> <span class="fl">0</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">outcome</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">data1</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">outcome</span>, <span class="va">data</span><span class="op">)</span>; <span class="va">data1</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="co">#...with a categorical (as.factor) outcome</span></span></span>
+<span class="r-in"><span><span class="va">outcome</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">group</span> <span class="op">==</span> <span class="fl">0</span>, <span class="st">"control"</span>, <span class="st">"case"</span><span class="op">)</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">outcome</span><span class="op">)</span> </span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dnn1</span> <span class="op">&lt;-</span> <span class="fu"><a href="SEMdnn.html">SEMdnn</a></span><span class="op">(</span><span class="va">ig1</span>, <span class="va">data1</span>, <span class="va">train</span>, cowt <span class="op">=</span> <span class="cn">TRUE</span>, thr <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
-<span class="r-in"><span>      <span class="co">#loss = "mse", hidden = 5*K, link = "selu",</span></span></span>
-<span class="r-in"><span>      loss <span class="op">=</span> <span class="st">"mse"</span>, hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">10</span>, <span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>,</span></span>
-<span class="r-in"><span>      validation <span class="op">=</span> <span class="fl">0</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>, lr <span class="op">=</span> <span class="fl">0.01</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, device <span class="op">=</span> <span class="st">"cpu"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dnn1</span> <span class="op">&lt;-</span> <span class="fu"><a href="SEMdnn.html">SEMdnn</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, <span class="va">outcome</span><span class="op">[</span><span class="va">train</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>      <span class="co">#hidden = 5*K, link = "selu", bias = TRUE,</span></span></span>
+<span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>      validation <span class="op">=</span> <span class="fl">0</span>,  epochs <span class="op">=</span> <span class="fl">32</span>, ncores <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">mse1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">dnn1</span>, <span class="va">data1</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">yobs</span> <span class="op">&lt;-</span> <span class="va">group</span><span class="op">[</span><span class="op">-</span><span class="va">train</span><span class="op">]</span></span></span>
-<span class="r-in"><span><span class="va">yhat</span> <span class="op">&lt;-</span> <span class="va">mse1</span><span class="op">$</span><span class="va">Yhat</span><span class="op">[</span> ,<span class="st">"outcome"</span><span class="op">]</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="benchmark.html">benchmark</a></span><span class="op">(</span><span class="va">yobs</span>, <span class="va">yhat</span>, thr<span class="op">=</span><span class="fl">0</span>, F1<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">dnn1</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span>, <span class="va">outcome</span><span class="op">[</span><span class="op">-</span><span class="va">train</span><span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">yhat</span> <span class="op">&lt;-</span> <span class="va">pred</span><span class="op">$</span><span class="va">Yhat</span><span class="op">[</span> ,<span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">outcome</span><span class="op">)</span><span class="op">]</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">yhat</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">yobs</span> <span class="op">&lt;-</span> <span class="va">outcome</span><span class="op">[</span><span class="op">-</span><span class="va">train</span><span class="op">]</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">yobs</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="classificationReport.html">classificationReport</a></span><span class="op">(</span><span class="va">yobs</span>, <span class="va">yhat</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span><span class="op">$</span><span class="va">stats</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Conducting the nonparanormal transformation via shrunkun ECDF...done.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via DNN...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 736 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-41.321965  srmr:0.203492</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 4.699288 secs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      amse        r2      srmr </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.6428678 0.3571322 0.2519231 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RICF solver ended normally after 2 iterations </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 6.262846  srmr: 0.3040025 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      amse        r2      srmr </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7653813 0.2346187 0.2948502 </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via DNN...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 800 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-38.883117  srmr:0.167098</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 4.834204 secs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      amse        r2      srmr </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5953616 0.4046384 0.2199239 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          pred</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> yobs      case control</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   case      65       9</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   control    1       5</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-plt img"><img src="predict.DNN-1.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 z5534 z5535 </span>
-<span class="r-plt img"><img src="predict.DNN-2.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch  train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.233789      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 : z842 z1432 z5600 z5603 z6300 </span>
-<span class="r-plt img"><img src="predict.DNN-3.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2671098      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 : z54205 z5606 z5608 </span>
-<span class="r-plt img"><img src="predict.DNN-4.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2902266      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 : z596 z4217 </span>
-<span class="r-plt img"><img src="predict.DNN-5.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.3085203      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 : z1616 </span>
-<span class="r-plt img"><img src="predict.DNN-6.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.3130042      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 736 iterations </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  logL: -32.97723  srmr: 0.0935154 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 11.33274 secs</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      amse     10452     84134       836      4747      4741      4744     79139 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5757168 0.4026496 0.4884897 0.4263059 0.4562469 0.7344475 0.7633227 0.5492031 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5530      5532      5533      5534      5535       842      1432      5600 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.2999405 0.2509800 1.1086082 0.2349699 0.6357745 0.7024854 0.6775760 0.4973224 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5603      6300     54205      5606      5608       596      4217      1616 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8554188 0.4312981 0.8111550 0.4845471 0.5130992 0.7592643 0.5571802 0.6012024 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> NLMINB solver ended normally after 1 iterations </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 6.263349  srmr: 0.3041398 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-plt img"><img src="predict.DNN-7.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      amse     10452     84134       836      4747      4741      4744     79139 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8973153 1.1160997 0.8591412 0.6957059 0.7435081 1.0773819 1.0733166 0.6766548 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5530      5532      5533      5534      5535       842      1432      5600 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.9041601 0.8519291 1.2303948 0.8115211 0.6638488 0.7160223 0.8122749 0.5717884 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5603      6300     54205      5606      5608       596      4217      1616 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1.0343893 0.6118950 1.1161717 0.8886350 0.9082540 1.0675990 1.0817833 1.1257768 </span>
-<span class="r-plt img"><img src="predict.DNN-8.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 : zoutcome </span>
-<span class="r-plt img"><img src="predict.DNN-9.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch     train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.004096301      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 z5534 z5535 </span>
-<span class="r-plt img"><img src="predict.DNN-10.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2232471      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 : z842 z1432 z5600 z5603 z6300 </span>
-<span class="r-plt img"><img src="predict.DNN-11.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2565469      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 : z54205 z5606 z5608 </span>
-<span class="r-plt img"><img src="predict.DNN-12.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2627199      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 : z596 z4217 </span>
-<span class="r-plt img"><img src="predict.DNN-13.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2888601      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 : z1616 </span>
-<span class="r-plt img"><img src="predict.DNN-14.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2608405      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 768 iterations </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  logL: -31.61147  srmr: 0.0817129 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 13.60366 secs</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     ypred</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> yobs  0  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    0  5  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1  3 71</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>          sp        se  acc       mcc</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.8333333 0.9594595 0.95 0.6960492</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              precision    recall        f1 accuracy       mcc support</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> case         0.9848485 0.8783784 0.9285714    0.875 0.4933551      74</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> control      0.3571429 0.8333333 0.5000000    0.875 0.4933551       6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> macro avg    0.6709957 0.8558559 0.7142857    0.875 0.4933551      80</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> weighted avg 0.9377706 0.8750000 0.8964286    0.875 0.4933551      80</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              support_prop</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> case                0.925</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> control             0.075</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> macro avg           1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> weighted avg        1.000</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
@@ -249,7 +201,7 @@ where we average over all (sink and mediators) graph nodes.</p></li>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer></div>

@@ -8,8 +8,8 @@ SEMdnn(
   graph,
   data,
   outcome = NULL,
-  cowt = TRUE,
   thr = NULL,
+  nboot = 0,
   hidden = c(10L, 10L, 10L),
   link = "relu",
   bias = TRUE,
@@ -38,12 +38,12 @@ to graph nodes (variables).}
 output (target). If NULL (default), the categorical output (target) will
 not be considered.}
 
-\item{cowt}{A logical value (default = TRUE). Compute the Olden's connection
-weights of the input node (variables), expressed relative to the maximum.}
+\item{thr}{A numeric value [0-1] indicating the threshold to apply to the
+Olden's connection weights to color the graph. If thr = NULL (default), the
+threshold is set to thr = 0.5*max(abs(connection weights)).}
 
-\item{thr}{A numerical value indicating the threshold to apply on the absolute
-values of the connection matrix to color the graph. If thr=NULL (default), the
-threshold is set to thr = abs(mean(cowt)).}
+\item{nboot}{number of bootstrap samples that will be used to compute cheap
+(lower, upper) CIs for all input variable weights. As a default, nboot = 0.}
 
 \item{hidden}{hidden units in layers; the number of layers corresponds with
 the length of the hidden units. As a default, hidden = c(10L, 10L, 10L).}
@@ -67,11 +67,11 @@ be optimized. For regression problem used in SEMdnn(), the user can specify:
 \item{validation}{A numerical value indicating the proportion of the data set 
 that should be used as a validation set (randomly selected, default = 0).}
 
-\item{lambda}{A numerical value indicating the strength of the regularization for 
-lambda penalty, \eqn{\lambda (L1 + L2)} (default = 0).}
+\item{lambda}{A numerical value indicating the strength of the regularization,
+\eqn{\lambda}(L1 + L2) for lambda penalty (default = 0).}
 
 \item{alpha}{A numerical vector to add L1/L2 regularization into the training. 
-Set the alpha parameter for each layer to \eqn{(1 - \alpha) L1 + \alpha L2}. 
+Set the alpha parameter for each layer to (1-\eqn{\alpha})L1 + \eqn{\alpha}L2. 
 It must fall between 0 and 1 (default = 0.5).}
 
 \item{optimizer}{A character value indicating the optimizer to use for 
@@ -105,16 +105,16 @@ An S3 object of class "DNN" is returned. It is a list of 5 objects:
 \enumerate{
 \item "fit", a list of DNN model objects, including: the estimated covariance 
 matrix (Sigma), the estimated model errors (Psi), the fitting indices (fitIdx),
-and the data.frame of estimated connection weights (parameterEstimates), if cowt=TRUE.
+and the parameterEstimates, i.e., the data.frame of Olden's connection weights. 
 \item "gest", the data.frame of estimated connection weights (parameterEstimates)
-of outcome levels, if cowt = TRUE and outcome != NULL.
+of outcome levels, if outcome != NULL.
 \item "model", a list of all j=1,...,(L-1) fitted MLP network models.
 \item "graph", the induced DAG of the input graph mapped on data variables.
-If cowt=TRUE, the DAG is colored based on the estimated connection weights, if
-abs(W) > thr and W < 0,  the edge is inhibited and it is highlighted in blue;
-otherwise, if abs(W) > thr and W > 0, the edge is activated and it is highlighted
-in red. If the outcome vector is given, nodes with absolute connection weights
-summed over the outcome levels, i.e. sum(abs(W[outcome levels])) > thr, will be
+The DAG is colored based on the Olden's connection weights (W), if abs(W) > thr
+and W < 0, the edge is inhibited and it is highlighted in blue; otherwise, if
+abs(W) > thr and W > 0, the edge is activated and it is highlighted in red.
+If the outcome vector is given, nodes with absolute connection weights summed
+over the outcome levels, i.e. sum(abs(W[outcome levels])) > thr, will be
 highlighted in pink.
 \item "data", input data subset mapping graph nodes.
 }
@@ -154,6 +154,12 @@ hidden layer below. Each neuron's value is determined by calculating a weighted
 summation of its outputs from the hidden layer before it, and then applying an
 activation function.  The calculated value of every neuron is used as the input
 for the neurons in the layer below it, until the output layer is reached.
+
+If boot != 0, the function will implement the cheap bootstrapping proposed by
+Lam (2002) to generate uncertainties, i.e. 90% confidence intervals (90% CIs),
+for DNN parameters. Bootstrapping can be enabled by setting a small number
+(1 to 10) of bootstrap samples. Note, however, that the computation can be
+time-consuming for massive DNNs, even with cheap bootstrapping!
 }
 \examples{
 
@@ -172,7 +178,7 @@ train<- sample(1:nrow(data), 0.5*nrow(data))
 #ncores<- parallel::detectCores(logical = FALSE)
 
 start<- Sys.time()
-dnn0<- SEMdnn(ig, data[train, ], cowt = TRUE, thr = NULL,
+dnn0<- SEMdnn(ig, data[train, ], thr = NULL,
 			#hidden = 5*K, link = "selu", bias = TRUE,
 			hidden = c(10,10,10), link = "selu", bias = TRUE,
 			validation = 0, epochs = 32, ncores = 2)
@@ -194,14 +200,15 @@ K<- rev(K[-c(1,length(K))]);K
 ig1<- mapGraph(ig, type="source"); gplot(ig1)
 
 start<- Sys.time()
-dnn1<- SEMdnn(ig1, data[train, ], cowt = TRUE, thr = NULL,
+dnn1<- SEMdnn(ig1, data[train, ], thr = NULL,
 			hidden = 5*K, link = "selu", bias = TRUE,
 		validation = 0, epochs = 32, ncores = 2)
 end<- Sys.time()
 print(end-start)
 
 #Visualization of the neural network structure
-nplot(dnn1$model[[1]], bias=FALSE)
+nn1 <- dnn1$model[[1]][[1]]
+nplot(nn1, bias=FALSE)
 
 #str(dnn1, max.level=2)
 dnn1$fit$fitIdx
@@ -214,7 +221,7 @@ table(E(dnn1$graph)$color)
 outcome<- factor(ifelse(group == 0, "control", "case")); table(outcome) 
 
 start<- Sys.time()
-dnn2<- SEMdnn(ig, data[train, ], outcome[train], cowt = TRUE, thr = NULL,
+dnn2<- SEMdnn(ig, data[train, ], outcome[train], thr = NULL,
 			#hidden = 5*K, link = "selu", bias = TRUE,
 			hidden = c(10,10,10), link = "selu", bias = TRUE,
 			validation = 0.2, epochs = 32, ncores = 2)
@@ -237,7 +244,10 @@ neural networks using ‘torch'. Ecography, 2024: e07143. https://doi.org/10.111
 
 Grassi M, Palluzzi F, Tarantino B (2022). SEMgraph: An R Package for Causal Network
 Analysis of High-Throughput Data with Structural Equation Models.
-Bioinformatics, 38 (20), 4829–4830 <https://doi.org/10.1093/bioinformatics/btac567>
+Bioinformatics, 38 (20), 4829–4830. <https://doi.org/10.1093/bioinformatics/btac567>
+
+Lam, H. (2022). Cheap bootstrap for input uncertainty quantification. WSC '22:
+Proceedings of the Winter Simulation Conference, 2318 - 2329.
 }
 \author{
 Mario Grassi \email{mario.grassi@unipv.it}

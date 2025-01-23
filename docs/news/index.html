@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">SEMdeep</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -48,8 +48,20 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="0.1.0" id="version-010-release-notes">Version 0.1.0 Release Notes<a class="anchor" aria-label="anchor" href="#version-010-release-notes"></a></h2>
+<h2 class="page-header" data-toc-text="0.1.0" id="version-010-release-notes">Version 0.1.0 Release Notes<small>2024-09-16</small><a class="anchor" aria-label="anchor" href="#version-010-release-notes"></a></h2>
 <ul><li>First stable version on CRAN</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.0.0" id="version-100-release-notes">Version 1.0.0 Release Notes<a class="anchor" aria-label="anchor" href="#version-100-release-notes"></a></h2>
+<ul><li><p>Version 1.0.0 is a major release with several new features, including:</p></li>
+<li><p>Added new argument outcome = NULL (defult). This parameter is used in SEMdnn() and SEMml() functions to process a sink categorical node (as a factor) for classification purposes using all graph nodes as covariates.</p></li>
+<li><p>Added new argument newoutcome = NULL (defult). This parameter is used in predict (.SEM, .DNN, .ML) functions to predict a sink categorical node (as a factor) for classification purposes using all graph nodes as covariates.</p></li>
+<li><p>classificationReport() function. A report showing the main classification metrics, like precision, recall, F1-score, accuracy, Matthew’s correlation coefficient (mcc) for all classes of the node = as.factor(outcome).</p></li>
+<li><p>crossValidation() function. A R-repeated K-fold cross-validation with a list of M models from SEMrun(), SEMml() and SEMdnn(). The winning model is selected by reporting the mean predicted performances across all RxKxM runs.</p></li>
+<li><p>getVariableImportance() function. Extraction of common Machine Learning (ML) variable (predictor) importance measures after fitting SEMrun(), SEMml() or SEMdnn() models.</p></li>
+<li><p>Added new argument nboot = 0 (default). This parameter implements cheap bootstrapping in SEMdnn() and SEMml() functions to generate uncertainties, i.e. CIs, for DNN/ML parameters. Bootstrapping can be enabled by setting a small number (from 1 to 10) of bootstrap samples.</p></li>
+<li><p>Change argument thr = 0.5 * max(abs(parameters)) (default). Now the DAG can be colored using a numeric [0-1] threshold. For example, 1/0.5 = 2, can be interpreted as the number of times a node/edge parameter is less than the maximum parameter value.</p></li>
+<li><p>Various fixed bugs discovered after the release 0.1.0.</p></li>
 </ul></div>
   </div>
 
@@ -65,7 +77,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer></div>

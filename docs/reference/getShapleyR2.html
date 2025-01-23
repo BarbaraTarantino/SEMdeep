@@ -23,7 +23,7 @@ of determination) into variable-level attributions of the variance
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">SEMdeep</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -65,7 +65,15 @@ of determination) into variable-level attributions of the variance
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getShapleyR2</span><span class="op">(</span><span class="va">object</span>, <span class="va">newdata</span>, thr <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">getShapleyR2</span><span class="op">(</span></span>
+<span>  <span class="va">object</span>,</span>
+<span>  <span class="va">newdata</span>,</span>
+<span>  newoutcome <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  thr <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ncores <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -73,17 +81,28 @@ of determination) into variable-level attributions of the variance
 
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
-<dd><p>A model fitting object from <code><a href="SEMml.html">SEMml()</a></code> function.</p></dd>
+<dd><p>A model fitting object from <code><a href="SEMml.html">SEMml()</a></code>, <code><a href="SEMdnn.html">SEMdnn()</a></code> or
+<code>SEMrun()</code> functions.</p></dd>
 
 
 <dt id="arg-newdata">newdata<a class="anchor" aria-label="anchor" href="#arg-newdata"></a></dt>
-<dd><p>A matrix containing new data with rows corresponding to
-subjects, and columns to variables.</p></dd>
+<dd><p>A matrix containing new data with rows corresponding to subjects,
+and columns to variables.</p></dd>
+
+
+<dt id="arg-newoutcome">newoutcome<a class="anchor" aria-label="anchor" href="#arg-newoutcome"></a></dt>
+<dd><p>A new character vector (as.factor) of labels for a categorical
+output (target)(default = NULL).</p></dd>
 
 
 <dt id="arg-thr">thr<a class="anchor" aria-label="anchor" href="#arg-thr"></a></dt>
-<dd><p>A threshold value to apply to signed Shapley (R2) values. If
-thr=NULL (default), the threshold is set to thr=mean(Shapley(R2) values)).</p></dd>
+<dd><p>A numeric value [0-1] indicating the threshold to apply to the
+signed Shapley R2 to color the graph. If thr = NULL (default), the
+threshold is set to thr = 0.5*max(abs(signed Shapley R2 values)).</p></dd>
+
+
+<dt id="arg-ncores">ncores<a class="anchor" aria-label="anchor" href="#arg-ncores"></a></dt>
+<dd><p>number of cpu cores (default = 2)</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -97,11 +116,16 @@ graph will not be plotted to screen.</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list od three object: (i) data.frame including the connections
-together with their signed Shapley R-squred values; (ii) the dag with
-colored edges, if abs(sign_R2) &gt; thr will be highlighted in red (sign_R2 &gt; 0)
-or blue (sign_R2 &lt; 0); and (ii) the list of individual Shapley values of
-predictors variables per each response variable.</p>
+    <p>A list od four object: (i) shapx: the list of individual Shapley values
+of predictors variables per each response variable; (ii) est: a data.frame including
+the connections together with their signed Shapley R-squred values; (iii) gest:
+if the outcome vector is given, a data.frame of signed Shapley R-squred values per
+outcome levels; and (iv) dag: DAG with colored edges/nodes. If abs(sign_r2) &gt; thr
+and sign_r2 &lt; 0, the edge is inhibited and it is highlighted in blue; otherwise,
+if abs(sign_r2) &gt; thr and sign_r2 &gt; 0, the edge is activated and it is highlighted
+in red. If the outcome vector is given, nodes with absolute connection weights
+summed over the outcome levels, i.e. sum(abs(sign_r2[outcome levels])) &gt; thr, will
+be highlighted in pink.</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -114,27 +138,24 @@ exPlanations), this suggested framework explains predictions of ML models,
 where input variables take the place of players, and their contribution to
 a particular prediction is measured using Shapley values.
 Successively, Redell (2019) presented a metric that combines the additive
-property of Shapley values with the robustness of the R2 of Gelman (2018)
-to produce an R2 variance decomposition that accurately captures the
-contribution of each variable to the explanatory power of the model.
-Additionally, we use the signed R2, in order to denote the regulation
-of connections in line with a linear SEM, since the edges in the DAG
-indicate node regulation (activation, if positive; inhibition, if
-negative). This has been recovered for each edge using sign(beta), i.e.,
-the sign of the coefficient estimates from a linear model (lm) fitting
-of the output node on the input nodes, as suggested by Joseph (2019).
-It should be noted that in order to ascertain the local significance
-of node regulation with respect to the DAG, the Shapley decomposition
-of the R-squared (R2) value can be employed for each outcome node
-(r=1,...,R) by averaging the R2 indices of their input nodes.</p>
-<p>The Shapley values are computed using the <span class="pkg">shapr</span> package that implements
-an extended version of the Kernel SHAP method for approximating Shapley values
-in which dependence between the features is taken into account.
-The operations necessary to compute kernel SHAP values are inherently
-time-consuming, with the computational time increasing in proportion to
-the number of predictor variables and the number of observations.
-Therefore, the function uses a progress bar to check the progress
-of the kernel SHAP evaluation per observation.</p>
+property of Shapley values with the robustness of the  R-squared (R2) of
+Gelman (2018) to produce a variance decomposition that accurately captures
+the contribution of each variable to the explanatory power of the model.
+We also use the signed R2, in order to denote the regulation of connections
+in line with a linear SEM, since the edges in the DAG indicate node regulation
+(activation, if positive; inhibition, if negative). This has been recovered for
+each edge using sign(beta), i.e., the sign of the coefficient estimates from a
+linear model (lm) fitting of the output node on the input nodes, as suggested
+by Joseph (2019).
+Additionally, in order to ascertain the local significance of node regulation
+with respect to the DAG, the Shapley decomposition of the R-squared values for
+each outcome node (r=1,...,R) can be computed by summing the ShapleyR2 indices
+of their input nodes.
+Finally, It should be noted that the operations required to compute kernel SHAP
+values are inherently time-consuming, with the computational time increasing
+in proportion to the number of predictor variables and the number of observations.
+Therefore, the function uses a progress bar to check the progress of the kernel
+SHAP evaluation per observation.</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -171,79 +192,51 @@ Bank of England working papers 784, Bank of England, revised 22 Jul 2020.</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">train</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>, <span class="fl">0.5</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">rf0</span><span class="op">&lt;-</span> <span class="fu"><a href="SEMml.html">SEMml</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span>, train<span class="op">=</span><span class="va">train</span>, algo<span class="op">=</span><span class="st">"rf"</span>, vimp<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 : z10452 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 : z1432 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 : z1616 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 : z4217 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 : z4741 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 : z4744 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7 : z4747 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8 : z54205 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9 : z5530 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10 : z5532 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11 : z5533 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12 : z5534 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13 : z5535 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14 : z5600 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15 : z5603 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16 : z5606 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17 : z5608 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18 : z596 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19 : z6300 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20 : z79139 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21 : z836 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22 : z84134 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23 : z842 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  RF solver ended normally after 23 iterations </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  logL: -33.22824  srmr: 0.0859545 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="va">rf0</span><span class="op">&lt;-</span> <span class="fu"><a href="SEMml.html">SEMml</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, algo<span class="op">=</span><span class="st">"rf"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via ML...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> RF solver ended normally after 23 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-33.16687  srmr:0.086188</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">res</span><span class="op">&lt;-</span> <span class="fu">getShapleyR2</span><span class="op">(</span><span class="va">rf0</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span>, thr<span class="op">=</span><span class="cn">NULL</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%  |                                                                              |===                                                                   |   4%  |                                                                              |======                                                                |   9%  |                                                                              |=========                                                             |  13%  |                                                                              |============                                                          |  17%  |                                                                              |===============                                                       |  22%  |                                                                              |==================                                                    |  26%  |                                                                              |=====================                                                 |  30%  |                                                                              |========================                                              |  35%  |                                                                              |===========================                                           |  39%  |                                                                              |==============================                                        |  43%  |                                                                              |=================================                                     |  48%  |                                                                              |=====================================                                 |  52%  |                                                                              |========================================                              |  57%  |                                                                              |===========================================                           |  61%  |                                                                              |==============================================                        |  65%  |                                                                              |=================================================                     |  70%  |                                                                              |====================================================                  |  74%  |                                                                              |=======================================================               |  78%  |                                                                              |==========================================================            |  83%  |                                                                              |=============================================================         |  87%  |                                                                              |================================================================      |  91%  |                                                                              |===================================================================   |  96%  |                                                                              |======================================================================| 100%</span>
 <span class="r-plt img"><img src="getShapleyR2-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu">E</span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">dag</span><span class="op">)</span><span class="op">$</span><span class="va">color</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     gray50       red2 royalblue3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         27          8         10 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         32          7          6 </span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># average shapley R2 across response variables</span></span></span>
+<span class="r-in"><span><span class="co"># shapley R2 per response variables</span></span></span>
 <span class="r-in"><span><span class="va">R2</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">est</span><span class="op">[</span>,<span class="fl">4</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">Y</span><span class="op">&lt;-</span> <span class="va">res</span><span class="op">$</span><span class="va">est</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span></span></span>
-<span class="r-in"><span><span class="va">R2Y</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="va">R2</span><span class="op">~</span><span class="va">Y</span>,data<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">R2</span>,<span class="va">Y</span><span class="op">)</span>,FUN<span class="op">=</span><span class="st">"mean"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">PE</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rf0</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span><span class="op">)</span><span class="op">$</span><span class="va">PE</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>R2Y<span class="op">=</span><span class="va">R2Y</span><span class="op">[</span>,<span class="fl">2</span><span class="op">]</span>,PEY<span class="op">=</span><span class="va">PE</span><span class="op">[</span><span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>              R2Y       PEY</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10452 0.30137196 1.5751174</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1432  0.13790902 0.8407252</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1616  0.05305108 1.2992863</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4217  0.24696402 1.4710206</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4741  0.04265047 0.9542770</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4744  0.04695295 0.9797583</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4747  0.04979782 0.7995575</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 54205 0.05470003 1.2948457</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5530  0.42754031 1.3477223</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5532  0.38832943 1.3374130</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5533  0.35283860 1.7462924</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5534  0.49553199 1.3393998</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5535  0.58557539 0.9579940</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5600  0.14279066 0.5885530</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5603  0.00000000 1.1292464</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5606  0.29351235 1.1417869</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5608  0.51480155 1.1304838</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 596   0.20377932 1.2727327</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6300  0.19044710 0.6232077</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 79139 0.49565753 0.8256068</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 836   0.57852045 0.8613661</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 84134 0.46729156 1.1949609</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 842   0.17292050 0.7906486</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">R2</span><span class="op">)</span> <span class="co"># total average R2</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.1713679</span>
-<span class="r-in"><span><span class="va">PE</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>    <span class="co"># total MSE</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     amse </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1.108783 </span>
+<span class="r-in"><span><span class="va">R2Y</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/aggregate.html" class="external-link">aggregate</a></span><span class="op">(</span><span class="va">R2</span><span class="op">~</span><span class="va">Y</span>,data<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">R2</span>,<span class="va">Y</span><span class="op">)</span>,FUN<span class="op">=</span><span class="st">"sum"</span><span class="op">)</span>;<span class="va">R2Y</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        Y        R2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  10452 0.3074106</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   1432 0.2746912</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   1616 0.1025127</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   4217 0.2416770</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   4741 0.2133041</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   4744 0.2336151</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   4747 0.3015739</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8  54205 0.2243528</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9   5530 0.4424930</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10  5532 0.3852137</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11  5533 0.3368840</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12  5534 0.4944426</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13  5535 0.5919868</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14  5600 0.2887038</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15  5603 0.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16  5606 0.2963567</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17  5608 0.5054904</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18   596 0.2057984</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19  6300 0.3769140</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20 79139 0.4867639</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21   836 0.5841519</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 22 84134 0.4718743</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 23   842 0.3401094</span>
+<span class="r-in"><span><span class="va">r2</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">R2Y</span><span class="op">$</span><span class="va">R2</span><span class="op">)</span>;<span class="va">r2</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.3350574</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
@@ -260,7 +253,7 @@ Bank of England working papers 784, Bank of England, revised 22 Jul 2020.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer></div>

@@ -9,8 +9,9 @@ getConnectionWeight(object, thr = NULL, verbose = FALSE, ...)
 \arguments{
 \item{object}{A neural network object from \code{SEMdnn()} function.}
 
-\item{thr}{A value of the threshold to apply to connection weights. If NULL
-(default), the threshold is set to thr=mean(abs(connection weights)).}
+\item{thr}{A numeric value [0-1] indicating the threshold to apply to the
+Olden's connection weights to color the graph. If thr = NULL (default), the
+threshold is set to thr = 0.5*max(abs(connection weights)).}
 
 \item{verbose}{A logical value. If FALSE (default), the processed graph 
 will not be plotted to screen.}
@@ -18,15 +19,17 @@ will not be plotted to screen.}
 \item{...}{Currently ignored.}
 }
 \value{
-A list od two object: (i) est: a data.frame including the connections together
-with their weights, and (ii)dag:  the DAG with colored edges. If abs(W) > thr and W < 0,
-the edge is inhibited and it is highlighted in blue; otherwise, if abs(W) > thr and
-W > 0, the edge is activated and it is highlighted in red. If the outcome vector is
-given, nodes with absolute connection weights summed over the outcome levels, i.e.
-sum(abs(W[outcome levels])) > thr, will be highlighted in pink.
+A list of three object: (i) est: a data.frame including the connections together
+with their connection weights(W), (ii) gest: if the outcome vector is given, a data.frame
+of connection weights for outcome lavels, and (iii) dag: DAG with colored edges/nodes. If
+abs(W) > thr and W < 0, the edge W > 0, the edge is activated and it is highlighted
+in red. If the outcome vector is given, nodes with absolute connection weights summed
+over the outcome levels, i.e. sum(abs(W[outcome levels])) > thr, will be highlighted
+in pink.
 }
 \description{
-The function computes the product of the raw input-hidden and
+The function computes the matrix multiplications of hidden
+weight matrices (Wx,...,Wy), i.e., the product of the raw input-hidden and
 hidden-output connection weights between each input and output neuron and
 sums the products across all hidden neurons, as proposed by Olden (2004).
 }
@@ -61,13 +64,13 @@ data<- alsData$exprs
 data<- transformData(data)$data
 
 #ncores<- parallel::detectCores(logical = FALSE)
-dnn0<- SEMdnn(ig, data, cowt = FALSE, thr = NULL,
+dnn0<- SEMdnn(ig, data, outcome = NULL, thr = NULL,
 			#hidden = 5*K, link = "selu", bias = TRUE,
 			hidden = c(10,10,10), link = "selu", bias = TRUE,
 			validation = 0,  epochs = 32, ncores = 2)
 
-res<- getConnectionWeight(dnn0, thr=NULL, verbose=TRUE)
-table(E(res$dag)$color)
+cw05<- getConnectionWeight(dnn0, thr = 0.5, verbose = TRUE)
+table(E(cw05$dag)$color)
 }
 }
 

@@ -15,8 +15,8 @@ the layers (default = FALSE).}
 \item{...}{Currently ignored.}
 }
 \value{
-nplot returns invisibly the graphical object representing the
-neural network architecture of NeuralNetTools.
+The function invisibly returns the graphical object representing
+the neural network architecture designed by NeuralNetTools.
 }
 \description{
 The function draws a neural network plot as a neural
@@ -45,8 +45,9 @@ dnn0 <- SEMdnn(ig, data, train=1:nrow(data), grad = FALSE,
 			hidden = c(10, 10, 10), link = "selu", bias =TRUE,
 			validation = 0, epochs = 32, ncores = 2)
 
- for (j in 1:length(dnn0$model)) { 
-   nplot(dnn0$model[[j]])
+ for (j in 1:length(dnn0$model)) {
+   nnj <- dnn0$model[[j]][[1]]
+   nplot(nnj)
    Sys.sleep(5)
  }
 }

@@ -9,8 +9,9 @@ getSignificanceTest(object, thr = NULL, verbose = FALSE, ...)
 \arguments{
 \item{object}{A neural network object from \code{SEMdnn()} function.}
 
-\item{thr}{A value of the threshold to apply to input t_test-values. If
-thr=NULL (default), the threshold is set to thr = mean(abs(t_test)).}
+\item{thr}{A numeric value [0-1] indicating the threshold to apply to the
+t-test values to color the graph. If thr = NULL (default), the threshold
+is set to thr = 0.5*max(abs(t-test values)).}
 
 \item{verbose}{A logical value. If FALSE (default), the processed graph 
 will not be plotted to screen.}
@@ -18,13 +19,14 @@ will not be plotted to screen.}
 \item{...}{Currently ignored.}
 }
 \value{
-A list od two object: (i) est: a data.frame including the connections
-together with their t_test values, and (ii) dag: the DAG with colored edges.
-If abs(t_test) > thr and t_test < 0, the edge is inhibited and it is
-highlighted in blue; otherwise, if abs(t_test) > thr and t_test > 0, the
-edge is activated and it is highlighted in red. If the outcome vector is given,
-nodes with absolute connection weights summed over the outcome levels, i.e.
-sum(abs(t_test[outcome levels])) > thr, will be highlighted in pink.
+A list of three object: (i) est: a data.frame including the connections together
+with their t_test weights, (ii) gest: if the outcome vector is given, a data.frame of
+t_test weights for outcome lavels, and (iii) dag: DAG with colored edges/nodes. If
+abs(t_test) > thr and t_test < 0, the edge is inhibited and it is highlighted in blue;
+otherwise, if abs(t_test) > thr and t_test > 0, the edge is activated and it is highlighted
+in red. If the outcome vector is given, nodes with absolute connection weights summed
+over the outcome levels, i.e. sum(abs(t_test[outcome levels])) > thr, will be highlighted
+in pink.
 }
 \description{
 The function computes a formal test for the significance of
@@ -58,13 +60,13 @@ data<- alsData$exprs
 data<- transformData(data)$data
 
 #ncores<- parallel::detectCores(logical = FALSE)
-dnn0 <- SEMdnn(ig, data, cowt = FALSE, thr = NULL,
+dnn0 <- SEMdnn(ig, data, outcome = NULL, thr = NULL,
 			#hidden = 5*K, link = "selu", bias = TRUE,
 			hidden = c(10,10,10), link = "selu", bias = TRUE,
 			validation = 0,  epochs = 32, ncores = 2)
 
-res<- getSignificanceTest(dnn0, thr=NULL, verbose=TRUE)
-table(E(res$dag)$color)
+st05<- getSignificanceTest(dnn0, thr = 2, verbose = TRUE)
+table(E(st05$dag)$color)
 }
 }
 

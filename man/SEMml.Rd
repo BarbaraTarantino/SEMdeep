@@ -9,8 +9,8 @@ SEMml(
   data,
   outcome = NULL,
   algo = "sem",
-  vimp = TRUE,
   thr = NULL,
+  nboot = 0,
   ncores = 2,
   verbose = FALSE,
   ...
@@ -37,16 +37,12 @@ Six algorithms can be specified:
 \item \code{algo="dnn"} for a large neural network model (1 hidden layers and 1000 nodes), see \code{\link[cito]{dnn}}.
 }}
 
-\item{vimp}{A Logical value(default=TRUE). Compute the variable (predictor) importance,
-considering: (i) the absolute value of the z-statistic of the model parameters
-for "sem"; (ii) the variable importance measures from the \code{\link[rpart]{rpart}},
-\code{\link[ranger]{importance}} or \code{\link[xgboost]{xgb.importance}} functions
-for "tree", "rf" or "xgb"; and (iii) the Olden's connection weights for "nn" or "dnn"
-methods. All vimp measures are expressed relative to their maximum value.}
+\item{thr}{A numeric value [0-1] indicating the threshold to apply to the
+variable importance values to color the graph. If thr = NULL (default), the
+threshold is set to thr = 0.5*max(abs(variable importance values)).}
 
-\item{thr}{A numerical value indicating the threshold to apply on the variable
-importance to color the graph. If thr=NULL (default), the threshold is set to
-thr = abs(mean(vimp)).}
+\item{nboot}{number of bootstrap samples that will be used to compute cheap
+(lower, upper) CIs for all input variable weights. As a default, nboot = 0.}
 
 \item{ncores}{number of cpu cores (default = 2)}
 
@@ -60,16 +56,16 @@ An S3 object of class "ML" is returned. It is a list of 5 objects:
 \enumerate{
 \item "fit", a list of ML model objects, including: the estimated covariance 
 matrix (Sigma), the estimated model errors (Psi), the fitting indices (fitIdx),
-and, if vimp = TRUE, the variable importances (parameterEstimates).
+and the parameterEstimates, i.e., the variable importance measures (VarImp).
 \item "gest", the data.frame of variable importances (parameterEstimates)
-of outcome levels, if vimp = TRUE and outcome != NULL.
+of outcome levels, if outcome != NULL.
 \item "model", a list of all the fitted non-linear nodewise-based models 
 (tree, rf, xgb, nn or dnn).
 \item "graph", the induced DAG of the input graph  mapped on data variables. 
-If vimp = TRUE, the DAG is colored based on the variable importance measure,
-i.e., if abs(vimp) > thr will be highlighted in red (vimp > 0) or blue
-(vimp < 0). If the outcome vector is given, nodes with variable importances
-summed over the outcome levels, i.e. sum(vimp[outcome levels])) > thr,
+The DAG with colored edge/nodes based on the variable importance measures,
+i.e., if abs(VarImp) > thr will be highlighted in red (VarImp > 0) or blue
+(VarImp < 0). If the outcome vector is given, nodes with variable importances
+summed over the outcome levels, i.e. sum(VarImp[outcome levels])) > thr,
 will be highlighted in pink.
 \item "data", input data subset mapping graph nodes.
 }
@@ -91,11 +87,17 @@ a set of nodewise-based models based on the directed links, i.e.,
 a set of edges pointing in the same direction, between two nodes 
 in the input graph that are causally relevant to each other. 
 The mediator or sink variables can be characterized in detail as 
-functions of their parents. An ML model (tree rf, xgb, nn, dnn) 
+functions of their parents. An ML model (sem, tree, rf, xgb, nn, dnn) 
 can then be fitted to each variable with non-zero inbound connectivity. 
 With R representing the number of mediators and sink nodes in the 
 network, the model fitting process is performed equation-by-equation 
 (r=1,...,R) times.
+
+If boot != 0, the function will implement the cheap bootstrapping proposed by
+Lam (2002) to generate uncertainties, i.e. 90% confidence intervals (90% CIs),
+for ML parameters. Bootstrapping can be enabled by setting a small number
+(1 to 10) of bootstrap samples. Note, however, that the computation can be
+time-consuming for massive MLs, even with cheap bootstrapping!
 }
 \examples{
 
@@ -111,52 +113,52 @@ set.seed(123)
 train<- sample(1:nrow(data), 0.5*nrow(data))
 
 start<- Sys.time()
+# ... tree
+res1<- SEMml(ig, data[train, ], algo="tree")
+
 # ... rf
-res1<- SEMml(ig, data[train, ], algo="rf", vimp=TRUE)
+res2<- SEMml(ig, data[train, ], algo="rf")
 
 # ... xgb
-res2<- SEMml(ig, data[train, ], algo="xgb", vimp=TRUE)
+res3<- SEMml(ig, data[train, ], algo="xgb")
 
 # ... nn
-res3<- SEMml(ig, data[train, ], algo="nn", vimp=TRUE)
-
-# ... sem
-res4<- SEMml(ig, data[train, ], algo="sem")
+res4<- SEMml(ig, data[train, ], algo="nn")
 
 end<- Sys.time()
 print(end-start)
 
-#visualizaation of the colored dag for algo="sem"
-gplot(res4$graph, l="dot", main="sem")
+#visualizaation of the colored dag for algo="nn"
+gplot(res4$graph, l="dot", main="nn")
 
 #Comparison of fitting indices (in train data)
-res1$fit$fitIdx #rf
-res2$fit$fitIdx #xgb
-res3$fit$fitIdx #nn
-res4$fit$fitIdx #sem
+res1$fit$fitIdx #tree
+res2$fit$fitIdx #rf
+res3$fit$fitIdx #xgb
+res4$fit$fitIdx #nn
 
 #Comparison of parameter estimates (in train data)
-parameterEstimates(res1$fit) #rf
-parameterEstimates(res2$fit) #xgb
-parameterEstimates(res3$fit) #nn
-parameterEstimates(res4$fit) #sem
+parameterEstimates(res1$fit) #tree
+parameterEstimates(res2$fit) #rf
+parameterEstimates(res3$fit) #xgb
+parameterEstimates(res4$fit) #nn
 
-#Comparison of VIMP (in train data)
-table(E(res1$graph)$color) #rf
-table(E(res2$graph)$color) #xgb
-table(E(res3$graph)$color) #nn
-table(E(res4$graph)$color) #sem
+#Comparison of VarImp (in train data)
+table(E(res1$graph)$color) #tree
+table(E(res2$graph)$color) #rf
+table(E(res3$graph)$color) #xgb
+table(E(res4$graph)$color) #nn
 
 #Comparison of AMSE, R2, SRMR (in test data)
-print(predict(res1, data[-train, ])$PE) #rf
-print(predict(res2, data[-train, ])$PE) #xgb
-print(predict(res3, data[-train, ])$PE) #nn
-print(predict(res4, data[-train, ])$PE) #sem
+print(predict(res1, data[-train, ])$PE) #tree
+print(predict(res2, data[-train, ])$PE) #rf
+print(predict(res3, data[-train, ])$PE) #xgb
+print(predict(res4, data[-train, ])$PE) #nn
 
 #...with a categorical (as.factor) outcome
 outcome <- factor(ifelse(group == 0, "control", "case")); table(outcome) 
 
-res5 <- SEMml(ig, data[train, ], outcome[train], algo="tree", vimp=TRUE)
+res5 <- SEMml(ig, data[train, ], outcome[train], algo="tree")
 gplot(res5$graph)
 table(E(res5$graph)$color)
 table(V(res5$graph)$color)
@@ -183,6 +185,9 @@ Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge
 Discovery and Data Mining.
 
 Ripley B.D. (1996). Pattern Recognition and Neural Networks. Cambridge University Press.
+
+Lam, H. (2022). Cheap bootstrap for input uncertainty quantification. WSC '22:
+Proceedings of the Winter Simulation Conference, 2318 - 2329.
 }
 \author{
 Mario Grassi \email{mario.grassi@unipv.it}

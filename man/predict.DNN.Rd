@@ -20,7 +20,7 @@ output (target) (default = NULL).}
 \item{...}{Currently ignored.}
 }
 \value{
-A list of 3 objects:
+A list of three objects:
 \enumerate{
 \item "PE", vector of the amse = average MSE over all (sink and mediators)
 graph nodes; r2 = 1 - amse; and srmr= Standardized Root Means Square Residual

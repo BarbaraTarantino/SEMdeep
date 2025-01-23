@@ -32,7 +32,7 @@ help from the torch developer."><!-- mathjax --><script src="https://cdnjs.cloud
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">SEMdeep</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -86,23 +86,24 @@ help from the torch developer.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">SEMdnn</span><span class="op">(</span></span>
 <span>  <span class="va">graph</span>,</span>
 <span>  <span class="va">data</span>,</span>
-<span>  train <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cowt <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  outcome <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  thr <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  loss <span class="op">=</span> <span class="st">"mse"</span>,</span>
+<span>  nboot <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10L</span>, <span class="fl">10L</span>, <span class="fl">10L</span><span class="op">)</span>,</span>
 <span>  link <span class="op">=</span> <span class="st">"relu"</span>,</span>
-<span>  validation <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  bias <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  dropout <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  loss <span class="op">=</span> <span class="st">"mse"</span>,</span>
+<span>  validation <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  lambda <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  dropout <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  optimizer <span class="op">=</span> <span class="st">"adam"</span>,</span>
 <span>  lr <span class="op">=</span> <span class="fl">0.01</span>,</span>
 <span>  epochs <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  device <span class="op">=</span> <span class="st">"cpu"</span>,</span>
+<span>  ncores <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  early_stopping <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -120,40 +121,50 @@ help from the torch developer.</p>
 to graph nodes (variables).</p></dd>
 
 
-<dt id="arg-train">train<a class="anchor" aria-label="anchor" href="#arg-train"></a></dt>
-<dd><p>A numeric vector specifying the row indices corresponding to
-the train dataset.</p></dd>
-
-
-<dt id="arg-cowt">cowt<a class="anchor" aria-label="anchor" href="#arg-cowt"></a></dt>
-<dd><p>A logical value. If <code>cowt=TRUE</code> connection weights of the
-input node (variables) are computing (default = FALSE).</p></dd>
+<dt id="arg-outcome">outcome<a class="anchor" aria-label="anchor" href="#arg-outcome"></a></dt>
+<dd><p>A character vector (as.factor) of labels for a categorical
+output (target). If NULL (default), the categorical output (target) will
+not be considered.</p></dd>
 
 
 <dt id="arg-thr">thr<a class="anchor" aria-label="anchor" href="#arg-thr"></a></dt>
-<dd><p>A numerical value indicating the threshold to apply on the absolute
-values of the connection matrix to color the graph (default = NULL).</p></dd>
+<dd><p>A numeric value [0-1] indicating the threshold to apply to the
+Olden's connection weights to color the graph. If thr = NULL (default), the
+threshold is set to thr = 0.5*max(abs(connection weights)).</p></dd>
 
 
-<dt id="arg-loss">loss<a class="anchor" aria-label="anchor" href="#arg-loss"></a></dt>
-<dd><p>A character value specifying the loss after which network should
-be optimized. The user can specify: (a) "mse" (mean squared error), "mae"
-(mean absolute error), or "gaussian" (normal likelihood), for regression problems;
-(b) "poisson" (poisson likelihood), or "nbinom" (negative binomial likelihood)
-for regression with count data; (c) "binomial" (binomial likelihood) for
-binary classification problems; (d) "softmax" or "cross-entropy" for multi-class
-classification (default = "mse").</p></dd>
+<dt id="arg-nboot">nboot<a class="anchor" aria-label="anchor" href="#arg-nboot"></a></dt>
+<dd><p>number of bootstrap samples that will be used to compute cheap
+(lower, upper) CIs for all input variable weights. As a default, nboot = 0.</p></dd>
 
 
 <dt id="arg-hidden">hidden<a class="anchor" aria-label="anchor" href="#arg-hidden"></a></dt>
 <dd><p>hidden units in layers; the number of layers corresponds with
-the length of the hidden units. As a default, <code>hidden = c(10L, 10L, 10L)</code>.</p></dd>
+the length of the hidden units. As a default, hidden = c(10L, 10L, 10L).</p></dd>
 
 
 <dt id="arg-link">link<a class="anchor" aria-label="anchor" href="#arg-link"></a></dt>
 <dd><p>A character value describing the activation function to use, which
 might be a single length or be a vector with many activation functions assigned
-to each layer (default = "relu").</p></dd>
+to each layer. As a default, link = "selu".</p></dd>
+
+
+<dt id="arg-bias">bias<a class="anchor" aria-label="anchor" href="#arg-bias"></a></dt>
+<dd><p>A logical vector, indicating whether to employ biases in the layers,
+which can be either vectors of logicals for each layer (number of hidden layers
++ 1 (final layer)) or of length one.  As a default, bias = TRUE.</p></dd>
+
+
+<dt id="arg-dropout">dropout<a class="anchor" aria-label="anchor" href="#arg-dropout"></a></dt>
+<dd><p>A numerical value for the dropout rate, which is the probability
+that a node will be excluded from training.  As a default, dropout = 0.</p></dd>
+
+
+<dt id="arg-loss">loss<a class="anchor" aria-label="anchor" href="#arg-loss"></a></dt>
+<dd><p>A character value specifying the at which the network should
+be optimized. For regression problem used in SEMdnn(), the user can specify:
+(a) "mse" (mean squared error), "mae" (mean absolute error), or "gaussian"
+(normal likelihood). As a default, loss = "mse".</p></dd>
 
 
 <dt id="arg-validation">validation<a class="anchor" aria-label="anchor" href="#arg-validation"></a></dt>
@@ -161,26 +172,15 @@ to each layer (default = "relu").</p></dd>
 that should be used as a validation set (randomly selected, default = 0).</p></dd>
 
 
-<dt id="arg-bias">bias<a class="anchor" aria-label="anchor" href="#arg-bias"></a></dt>
-<dd><p>A logical vector, indicating whether to employ biases in the layers
-(<code>bias = TRUE</code>), which can be either vectors of logicals for each layer
-(number of hidden layers + 1 (final layer)) or of length one (default = TRUE).</p></dd>
-
-
 <dt id="arg-lambda">lambda<a class="anchor" aria-label="anchor" href="#arg-lambda"></a></dt>
-<dd><p>A numerical value indicating the strength of regularization:
-lambda penalty, \(\lambda * (L1 + L2)\) (default = 0).</p></dd>
+<dd><p>A numerical value indicating the strength of the regularization,
+\(\lambda\)(L1 + L2) for lambda penalty (default = 0).</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
 <dd><p>A numerical vector to add L1/L2 regularization into the training.
-Set the alpha parameter for each layer to \((1 - \alpha) * ||weights||_1 +
-\alpha ||weights||^2\). It must fall between 0 and 1 (default = 0.5).</p></dd>
-
-
-<dt id="arg-dropout">dropout<a class="anchor" aria-label="anchor" href="#arg-dropout"></a></dt>
-<dd><p>A numerical value for the dropout rate, which is the probability
-that a node will be excluded from training (default = 0).</p></dd>
+Set the alpha parameter for each layer to (1-\(\alpha\))L1 + \(\alpha\)L2.
+It must fall between 0 and 1 (default = 0.5).</p></dd>
 
 
 <dt id="arg-optimizer">optimizer<a class="anchor" aria-label="anchor" href="#arg-optimizer"></a></dt>
@@ -188,7 +188,7 @@ that a node will be excluded from training (default = 0).</p></dd>
 training the network. The user can specify: "adam" (ADAM algorithm), "adagrad"
 (adaptive gradient algorithm), "rmsprop" (root mean squared propagation),
 "rprop” (resilient backpropagation), "sgd" (stochastic gradient descent).
-As a default, <code>optimizer = “adam”</code>.</p></dd>
+As a default, optimizer = "adam".</p></dd>
 
 
 <dt id="arg-lr">lr<a class="anchor" aria-label="anchor" href="#arg-lr"></a></dt>
@@ -203,7 +203,11 @@ is conducted (default = 100).</p></dd>
 
 <dt id="arg-device">device<a class="anchor" aria-label="anchor" href="#arg-device"></a></dt>
 <dd><p>A character value describing the CPU/GPU device ("cpu", "cuda", "mps")
-on which the  neural network should be trained on (default = "cpu")</p></dd>
+on which the  neural network should be trained on. As a default, device = "cpu".</p></dd>
+
+
+<dt id="arg-ncores">ncores<a class="anchor" aria-label="anchor" href="#arg-ncores"></a></dt>
+<dd><p>number of cpu cores (default = 2)</p></dd>
 
 
 <dt id="arg-early-stopping">early_stopping<a class="anchor" aria-label="anchor" href="#arg-early-stopping"></a></dt>
@@ -213,9 +217,8 @@ loss when available. Default is FALSE, no early stopping is applied.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>If <code>verbose = TRUE</code>, the training curves of the DNN models
-are displayed as output, comparing the training, validation and baseline
-curves in terms of loss (y) against the number of epochs (x) (default = TRUE).</p></dd>
+<dd><p>The training loss values of the DNN model are displayed as output,
+comparing the training, validation and baseline in the last epoch (default = FALSE).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -226,15 +229,18 @@ curves in terms of loss (y) against the number of epochs (x) (default = TRUE).</
     <h2>Value</h2>
     <p>An S3 object of class "DNN" is returned. It is a list of 5 objects:</p><ol><li><p>"fit", a list of DNN model objects, including: the estimated covariance
 matrix (Sigma), the estimated model errors (Psi), the fitting indices (fitIdx),
-and the estimated connection weights (parameterEstimates), if cowt=TRUE.</p></li>
-<li><p>“Yhat”, a matrix of prediction values of sink and mediator graph nodes.</p></li>
+and the parameterEstimates, i.e., the data.frame of Olden's connection weights.</p></li>
+<li><p>"gest", the data.frame of estimated connection weights (parameterEstimates)
+of outcome levels, if outcome != NULL.</p></li>
 <li><p>"model", a list of all j=1,...,(L-1) fitted MLP network models.</p></li>
 <li><p>"graph", the induced DAG of the input graph mapped on data variables.
-If cowt=TRUE, the DAG is colored based on the estimated connection weights, if
-abs(W) &gt; thr and W &lt; 0,  the edge is inhibited and it is highlighted in blue;
-otherwise, if abs(W) &gt; thr and W &gt; 0, the edge is activated and it is highlighted
-in red.</p></li>
-<li><p>"data", input training data subset mapping graph nodes.</p></li>
+The DAG is colored based on the Olden's connection weights (W), if abs(W) &gt; thr
+and W &lt; 0, the edge is inhibited and it is highlighted in blue; otherwise, if
+abs(W) &gt; thr and W &gt; 0, the edge is activated and it is highlighted in red.
+If the outcome vector is given, nodes with absolute connection weights summed
+over the outcome levels, i.e. sum(abs(W[outcome levels])) &gt; thr, will be
+highlighted in pink.</p></li>
+<li><p>"data", input data subset mapping graph nodes.</p></li>
 </ol></div>
     <div id="details">
     <h2>Details</h2>
@@ -249,6 +255,11 @@ hidden layer below. Each neuron's value is determined by calculating a weighted
 summation of its outputs from the hidden layer before it, and then applying an
 activation function.  The calculated value of every neuron is used as the input
 for the neurons in the layer below it, until the output layer is reached.</p>
+<p>If boot != 0, the function will implement the cheap bootstrapping proposed by
+Lam (2002) to generate uncertainties, i.e. 90<!-- % confidence intervals (90% CIs), -->
+for DNN parameters. Bootstrapping can be enabled by setting a small number
+(1 to 10) of bootstrap samples. Note, however, that the computation can be
+time-consuming for massive DNNs, even with cheap bootstrapping!</p>
     </div>
     <div id="references">
     <h2>References</h2>
@@ -256,7 +267,9 @@ for the neurons in the layer below it, until the output layer is reached.</p>
 neural networks using ‘torch'. Ecography, 2024: e07143. https://doi.org/10.1111/ecog.07143</p>
 <p>Grassi M, Palluzzi F, Tarantino B (2022). SEMgraph: An R Package for Causal Network
 Analysis of High-Throughput Data with Structural Equation Models.
-Bioinformatics, 38 (20), 4829–4830 &lt;https://doi.org/10.1093/bioinformatics/btac567&gt;</p>
+Bioinformatics, 38 (20), 4829–4830. &lt;https://doi.org/10.1093/bioinformatics/btac567&gt;</p>
+<p>Lam, H. (2022). Cheap bootstrap for input uncertainty quantification. WSC '22:
+Proceedings of the Winter Simulation Conference, 2318 - 2329.</p>
     </div>
     <div id="author">
     <h2>Author</h2>
@@ -278,159 +291,96 @@ Bioinformatics, 38 (20), 4829–4830 &lt;https://doi.org/10.1093/bioinformatics/
 <span class="r-in"><span><span class="co">#...with train-test (0.5-0.5) samples</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">train</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>, <span class="fl">0.5</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="co">#thr&lt;- 1/sqrt(2*nrow(data[train, ])) #Joseph(2020, formula 22)</span></span></span>
+<span class="r-in"><span><span class="co">#ncores&lt;- parallel::detectCores(logical = FALSE)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dnn0</span> <span class="op">&lt;-</span> <span class="fu">SEMdnn</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span>, <span class="va">train</span>, cowt <span class="op">=</span> <span class="cn">TRUE</span>, thr <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
-<span class="r-in"><span>      <span class="co">#loss = "mse", hidden = 5*K, link = "selu",</span></span></span>
-<span class="r-in"><span>      loss <span class="op">=</span> <span class="st">"mse"</span>, hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">10</span>, <span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>,</span></span>
-<span class="r-in"><span>      validation <span class="op">=</span> <span class="fl">0</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>, lr <span class="op">=</span> <span class="fl">0.01</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, device <span class="op">=</span> <span class="st">"cpu"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dnn0</span><span class="op">&lt;-</span> <span class="fu">SEMdnn</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, thr <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
+<span class="r-in"><span>      <span class="co">#hidden = 5*K, link = "selu", bias = TRUE,</span></span></span>
+<span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>      validation <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>, ncores <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#str(dnn0, max.level=2)</span></span></span>
 <span class="r-in"><span><span class="va">dnn0</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">fitIdx</span></span></span>
-<span class="r-in"><span><span class="va">dnn0</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">parameterEstimates</span></span></span>
+<span class="r-in"><span><span class="fu">parameterEstimates</span><span class="op">(</span><span class="va">dnn0</span><span class="op">$</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">gplot</span><span class="op">(</span><span class="va">dnn0</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu">E</span><span class="op">(</span><span class="va">dnn0</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span><span class="op">$</span><span class="va">color</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#...with a binary outcome (1=case, 0=control)</span></span></span>
+<span class="r-in"><span><span class="co">#...with source nodes -&gt; graph layer structure -&gt; sink nodes</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">ig1</span><span class="op">&lt;-</span> <span class="fu"><a href="mapGraph.html">mapGraph</a></span><span class="op">(</span><span class="va">ig</span>, type<span class="op">=</span><span class="st">"outcome"</span><span class="op">)</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">outcome</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">group</span> <span class="op">==</span> <span class="fl">0</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">outcome</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">data1</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">outcome</span>, <span class="va">data</span><span class="op">)</span>; <span class="va">data1</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dnn1</span> <span class="op">&lt;-</span> <span class="fu">SEMdnn</span><span class="op">(</span><span class="va">ig1</span>, <span class="va">data1</span>, <span class="va">train</span>, cowt <span class="op">=</span> <span class="cn">TRUE</span>, thr <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
-<span class="r-in"><span>      <span class="co">#loss = "mse", hidden = 5*K, link = "selu",</span></span></span>
-<span class="r-in"><span>      loss <span class="op">=</span> <span class="st">"mse"</span>, hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">10</span>, <span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>,</span></span>
-<span class="r-in"><span>      validation <span class="op">=</span> <span class="fl">0</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>, lr <span class="op">=</span> <span class="fl">0.01</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, device <span class="op">=</span> <span class="st">"cpu"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#str(dnn1, max.level=2)</span></span></span>
-<span class="r-in"><span><span class="va">dnn1</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">fitIdx</span></span></span>
-<span class="r-in"><span><span class="va">dnn1</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">parameterEstimates</span></span></span>
-<span class="r-in"><span><span class="fu">gplot</span><span class="op">(</span><span class="va">dnn1</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span> </span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu">E</span><span class="op">(</span><span class="va">dnn1</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span><span class="op">$</span><span class="va">color</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#...with input -&gt; hidden structure -&gt; output :</span></span></span>
-<span class="r-in"><span><span class="co"># source nodes -&gt; graph layer structure -&gt; sink nodes</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#View topological layer (TL) ordering</span></span></span>
-<span class="r-in"><span><span class="va">dag</span><span class="op">&lt;-</span> <span class="fu">graph2dag</span><span class="op">(</span><span class="va">dnn0</span><span class="op">$</span><span class="va">graph</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>,<span class="op">]</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">L</span><span class="op">&lt;-</span> <span class="fu">SEMdeep</span><span class="fu">:::</span><span class="fu">buildLevels</span><span class="op">(</span><span class="va">dag</span><span class="op">)</span>;<span class="va">L</span></span></span>
-<span class="r-in"><span><span class="va">K</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">L</span>, <span class="va">length</span><span class="op">)</span><span class="op">)</span>;<span class="va">K</span></span></span>
+<span class="r-in"><span><span class="co">#Topological layer (TL) ordering</span></span></span>
+<span class="r-in"><span><span class="va">K</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">12</span>,  <span class="fl">5</span>,  <span class="fl">3</span>,  <span class="fl">2</span>,  <span class="fl">1</span>,  <span class="fl">8</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">K</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="va">K</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">K</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>;<span class="va">K</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">ig2</span><span class="op">&lt;-</span> <span class="fu"><a href="mapGraph.html">mapGraph</a></span><span class="op">(</span><span class="va">ig</span>, type<span class="op">=</span><span class="st">"source"</span><span class="op">)</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ig1</span><span class="op">&lt;-</span> <span class="fu"><a href="mapGraph.html">mapGraph</a></span><span class="op">(</span><span class="va">ig</span>, type<span class="op">=</span><span class="st">"source"</span><span class="op">)</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig1</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dnn2</span> <span class="op">&lt;-</span> <span class="fu">SEMdnn</span><span class="op">(</span><span class="va">ig2</span>, <span class="va">data</span>, <span class="va">train</span>, cowt <span class="op">=</span> <span class="cn">TRUE</span>, thr <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
-<span class="r-in"><span>      loss <span class="op">=</span> <span class="st">"mse"</span>, hidden <span class="op">=</span> <span class="fl">5</span><span class="op">*</span><span class="va">K</span>, link <span class="op">=</span> <span class="st">"selu"</span>,</span></span>
-<span class="r-in"><span>      <span class="co">#loss = "mse", hidden = c(10, 10, 10), link = "selu",</span></span></span>
-<span class="r-in"><span>      validation <span class="op">=</span> <span class="fl">0</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>, lr <span class="op">=</span> <span class="fl">0.01</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, device <span class="op">=</span> <span class="st">"cpu"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dnn1</span><span class="op">&lt;-</span> <span class="fu">SEMdnn</span><span class="op">(</span><span class="va">ig1</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, thr <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
+<span class="r-in"><span>      hidden <span class="op">=</span> <span class="fl">5</span><span class="op">*</span><span class="va">K</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>    validation <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>, ncores <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#Visualization of the neural network structure</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="nplot.html">nplot</a></span><span class="op">(</span><span class="va">dnn2</span><span class="op">$</span><span class="va">model</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, bias<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">nn1</span> <span class="op">&lt;-</span> <span class="va">dnn1</span><span class="op">$</span><span class="va">model</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="nplot.html">nplot</a></span><span class="op">(</span><span class="va">nn1</span>, bias<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#str(dnn1, max.level=2)</span></span></span>
+<span class="r-in"><span><span class="va">dnn1</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">fitIdx</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dnn1</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">Psi</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">parameterEstimates</span><span class="op">(</span><span class="va">dnn1</span><span class="op">$</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">gplot</span><span class="op">(</span><span class="va">dnn1</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu">E</span><span class="op">(</span><span class="va">dnn1</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span><span class="op">$</span><span class="va">color</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#...with a categorical outcome, a train set (0.5) and a validation set (0.2)</span></span></span>
+<span class="r-in"><span><span class="va">outcome</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">group</span> <span class="op">==</span> <span class="fl">0</span>, <span class="st">"control"</span>, <span class="st">"case"</span><span class="op">)</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">outcome</span><span class="op">)</span> </span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dnn2</span><span class="op">&lt;-</span> <span class="fu">SEMdnn</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, <span class="va">outcome</span><span class="op">[</span><span class="va">train</span><span class="op">]</span>, thr <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
+<span class="r-in"><span>      <span class="co">#hidden = 5*K, link = "selu", bias = TRUE,</span></span></span>
+<span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>      validation <span class="op">=</span> <span class="fl">0.2</span>, epochs <span class="op">=</span> <span class="fl">32</span>, ncores <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#str(dnn2, max.level=2)</span></span></span>
 <span class="r-in"><span><span class="va">dnn2</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">fitIdx</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dnn2</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">Psi</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dnn2</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">parameterEstimates</span></span></span>
-<span class="r-in"><span><span class="fu">gplot</span><span class="op">(</span><span class="va">dnn2</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">parameterEstimates</span><span class="op">(</span><span class="va">dnn2</span><span class="op">$</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">gplot</span><span class="op">(</span><span class="va">dnn2</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span> </span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu">E</span><span class="op">(</span><span class="va">dnn2</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span><span class="op">$</span><span class="va">color</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu">V</span><span class="op">(</span><span class="va">dnn2</span><span class="op">$</span><span class="va">graph</span><span class="op">)</span><span class="op">$</span><span class="va">color</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Conducting the nonparanormal transformation via shrunkun ECDF...done.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 z5534 z5535 </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via DNN...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 736 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-41.518629  srmr:0.1845</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 4.837363 secs</span>
 <span class="r-plt img"><img src="SEMdnn-1.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2292302      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 : z842 z1432 z5600 z5603 z6300 </span>
 <span class="r-plt img"><img src="SEMdnn-2.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2360329      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 : z54205 z5606 z5608 </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via DNN...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 384 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-20.679355  srmr:0.154085</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 2.863694 secs</span>
 <span class="r-plt img"><img src="SEMdnn-3.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2449019      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 : z596 z4217 </span>
 <span class="r-plt img"><img src="SEMdnn-4.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2934968      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 : z1616 </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via DNN...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 800 iterations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-43.263141  srmr:0.179866</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 4.60148 secs</span>
 <span class="r-plt img"><img src="SEMdnn-5.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2909994      NA</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 736 iterations </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  logL: -32.64203  srmr: 0.0964083 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 10.76691 secs</span>
-<span class="r-plt img"><img src="SEMdnn-6.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="SEMdnn-7.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 : zoutcome </span>
-<span class="r-plt img"><img src="SEMdnn-8.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch     train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.002971579      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 z5534 z5535 </span>
-<span class="r-plt img"><img src="SEMdnn-9.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2321097      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 : z842 z1432 z5600 z5603 z6300 </span>
-<span class="r-plt img"><img src="SEMdnn-10.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2811348      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 : z54205 z5606 z5608 </span>
-<span class="r-plt img"><img src="SEMdnn-11.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.2104915      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 : z596 z4217 </span>
-<span class="r-plt img"><img src="SEMdnn-12.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.3153979      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 : z1616 </span>
-<span class="r-plt img"><img src="SEMdnn-13.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.3325882      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 768 iterations </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  logL: -32.15814  srmr: 0.0820331 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 12.57297 secs</span>
-<span class="r-plt img"><img src="SEMdnn-14.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="SEMdnn-15.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 z5534 z5535 </span>
-<span class="r-plt img"><img src="SEMdnn-16.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    epoch   train_l valid_l</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32    32 0.4558655      NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 384 iterations </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  logL: -20.97883  srmr: 0.1426717 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 2.60942 secs</span>
-<span class="r-plt img"><img src="SEMdnn-17.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="SEMdnn-18.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     gray50       red2 royalblue3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         38         13         21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  pink white </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     8    23 </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
@@ -447,7 +397,7 @@ Bioinformatics, 38 (20), 4829–4830 &lt;https://doi.org/10.1093/bioinformatics/
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer></div>

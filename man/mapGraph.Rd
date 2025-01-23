@@ -43,7 +43,7 @@ The function insert additional nodes to a graph object.
 Among the node types, additional source or sink nodes can be added. 
 Regarding the former, source nodes can represent: (i) data variables; 
 (ii) a group variable; (iii) Latent Variables (LV). For the latter,
-Sink nodes represent the levels of a categorical outcome variable and
+sink nodes represent the levels of a categorical outcome variable and
 are linked with all graph nodes.' Moreover, \code{mapGraph()} can also
 create a new graph object starting from a compact symbolic formula.
 }

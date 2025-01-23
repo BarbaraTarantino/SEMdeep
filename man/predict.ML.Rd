@@ -4,7 +4,7 @@
 \alias{predict.ML}
 \title{SEM-based out-of-sample prediction using node-wise ML}
 \usage{
-\method{predict}{ML}(object, newdata, newoutcome = NULL, verbose = FALSE, ...)
+\method{predict}{ML}(object, newdata, newoutcome = NULL, ncores = 2, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{A model fitting object from \code{SEMml()} function.}
@@ -14,6 +14,8 @@ and columns to variables.}
 
 \item{newoutcome}{A new character vector (as.factor) of labels for a categorical
 output (target)(default = NULL).}
+
+\item{ncores}{number of cpu cores (default = 2)}
 
 \item{verbose}{Print predicted out-of-sample MSE values (default = FALSE).}
 
@@ -48,20 +50,20 @@ set.seed(123)
 train<- sample(1:nrow(data), 0.5*nrow(data))
 
 start<- Sys.time()
-# ... rf
-res1<- SEMml(ig, data[train, ], algo="rf", vimp=FALSE)
+# ... tree
+res1<- SEMml(ig, data[train, ], algo="tree")
 mse1<- predict(res1, data[-train, ], verbose=TRUE)
 
-# ... xgb
-res2<- SEMml(ig, data[train, ], algo="xgb", vimp=FALSE)
+# ... rf
+res2<- SEMml(ig, data[train, ], algo="rf")
 mse2<- predict(res2, data[-train, ], verbose=TRUE)
 
-# ... nn
-res3<- SEMml(ig, data[train, ], algo="nn", vimp=FALSE)
+# ... xgb
+res3<- SEMml(ig, data[train, ], algo="xgb")
 mse3<- predict(res3, data[-train, ], verbose=TRUE)
 
-# ... sem
-res4<- SEMml(ig, data[train, ], algo="sem", vimp=FALSE)
+# ... nn
+res4<- SEMml(ig, data[train, ], algo="nn")
 mse4<- predict(res4, data[-train, ], verbose=TRUE)
 end<- Sys.time()
 print(end-start)
@@ -69,7 +71,7 @@ print(end-start)
 #...with a categorical (as.factor) outcome
 outcome <- factor(ifelse(group == 0, "control", "case")); table(outcome) 
 
-res5 <- SEMml(ig, data[train, ], outcome[train], algo="tree", vimp=TRUE)
+res5 <- SEMml(ig, data[train, ], outcome[train], algo="tree")
 pred <- predict(res5, data[-train, ], outcome[-train], verbose=TRUE)
 yhat <- pred$Yhat[ ,levels(outcome)]; head(yhat)
 yobs <- outcome[-train]; head(yobs)

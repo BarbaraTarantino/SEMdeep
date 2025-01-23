@@ -22,7 +22,7 @@ layers act as predictors x."><!-- mathjax --><script src="https://cdnjs.cloudfla
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">SEMdeep</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -64,7 +64,7 @@ layers act as predictors x.</p>
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'SEM'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">newdata</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">newdata</span>, newoutcome <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -73,14 +73,17 @@ layers act as predictors x.</p>
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
 <dd><p>An object, as that created by the function <code>SEMrun()</code>
-with the argument <code>fit</code> set to <code>fit = 0</code> or <code>fit = 1</code>.</p></dd>
+with the argument <code>group</code> set to the default <code>group = NULL</code>.</p></dd>
 
 
 <dt id="arg-newdata">newdata<a class="anchor" aria-label="anchor" href="#arg-newdata"></a></dt>
 <dd><p>A matrix with new data, with rows corresponding to subjects,
-and columns to variables. If <code>object$fit</code> is a model with the group
-variable (<code>fit = 1</code>), the first column of newdata must be the new
-group binary vector (0=control, 1=case).</p></dd>
+and columns to variables.</p></dd>
+
+
+<dt id="arg-newoutcome">newoutcome<a class="anchor" aria-label="anchor" href="#arg-newoutcome"></a></dt>
+<dd><p>A new character vector (as.factor) of labels for a categorical
+output (target)(default = NULL).</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -94,9 +97,11 @@ will not be plotted to screen.</p></dd>
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list of 2 objects:</p><ol><li><p>"PE", vector of the prediction error equal to the Mean Squared Error
-(MSE) for each out-of-bag prediction. The first value of PE is the AMSE,
-where we average over all (sink and mediators) graph nodes.</p></li>
+    <p>A list of 3 objects:</p><ol><li><p>"PE", vector of the amse = average MSE over all (sink and mediators)
+graph nodes; r2 = 1 - amse; and srmr= Standardized Root Means Square Residual
+between the out-of-bag correlation matrix and the model correlation matrix.</p></li>
+<li><p>"mse", vector of the Mean Squared Error (MSE) for each out-of-bag
+prediction of the sink and mediators graph nodes.</p></li>
 <li><p>"Yhat", the matrix of continuous predicted values of graph nodes
 (excluding source nodes) based on out-of-bag samples.</p></li>
 </ol></div>
@@ -105,9 +110,10 @@ where we average over all (sink and mediators) graph nodes.</p></li>
     <p>The function first creates a layer-based structure of the
 input graph. Then, a SEM-based predictive approach (Rooij et al., 2022)
 is used to produce predictions while accounting for the graph structure
-organised in topological layers, j=1,...,L. In each iteration, the response
-variables y are the nodes in the j layer and the predictors x are the nodes
-belonging to the previous j-1 layers.
+based on the topological layer (j=1,…,L) of the input graph. In each iteration,
+the response (output) variables, y are the nodes in the j=1,...,(L-1) layer and
+the predictor (input) variables, x are the nodes belonging to the successive,
+(j+1),...,L layers.
 Predictions (for y given x) are based on the (joint y and x) model-implied
 variance-covariance (Sigma) matrix and mean vector (Mu) of the fitted SEM,
 and the standard expression for the conditional mean of a multivariate normal
@@ -133,7 +139,6 @@ Bioinformatics, 38 (20), 4829–4830 &lt;https://doi.org/10.1093/bioinformatics/
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># load ALS data</span></span></span>
-<span class="r-in"><span><span class="va">ig</span><span class="op">&lt;-</span> <span class="va">alsData</span><span class="op">$</span><span class="va">graph</span></span></span>
 <span class="r-in"><span><span class="va">data</span><span class="op">&lt;-</span> <span class="va">alsData</span><span class="op">$</span><span class="va">exprs</span></span></span>
 <span class="r-in"><span><span class="va">data</span><span class="op">&lt;-</span> <span class="fu">transformData</span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">$</span><span class="va">data</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Conducting the nonparanormal transformation via shrunkun ECDF...done.</span>
@@ -143,242 +148,47 @@ Bioinformatics, 38 (20), 4829–4830 &lt;https://doi.org/10.1093/bioinformatics/
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">train</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span>, <span class="fl">0.5</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># SEM fitting</span></span></span>
-<span class="r-in"><span><span class="co">#sem0&lt;- SEMrun(ig, data[train,], algo="lavaan", SE="none")</span></span></span>
-<span class="r-in"><span><span class="co">#sem0&lt;- SEMrun(ig, data[train,], algo="ricf", n_rep=0)</span></span></span>
-<span class="r-in"><span><span class="va">sem0</span><span class="op">&lt;-</span> <span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>,<span class="op">]</span>, SE<span class="op">=</span><span class="st">"none"</span>, limit<span class="op">=</span><span class="fl">1000</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> NLMINB solver ended normally after 1 iterations </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 6.263349  srmr: 0.3041398 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># predictors, source+mediator; outcomes, mediator+sink</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">res0</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">sem0</span>, newdata<span class="op">=</span><span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>,<span class="op">]</span><span class="op">)</span> </span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">res0</span><span class="op">$</span><span class="va">PE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      amse     10452     84134       836      4747      4741      4744     79139 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8973153 1.1160997 0.8591412 0.6957059 0.7435081 1.0773819 1.0733166 0.6766548 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5530      5532      5533      5534      5535       842      1432      5600 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.9041601 0.8519291 1.2303948 0.8115211 0.6638488 0.7160223 0.8122749 0.5717884 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5603      6300     54205      5606      5608       596      4217      1616 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1.0343893 0.6118950 1.1161717 0.8886350 0.9082540 1.0675990 1.0817833 1.1257768 </span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># SEM fitting</span></span></span>
-<span class="r-in"><span><span class="co">#sem1&lt;- SEMrun(ig, data[train,], group[train], algo="lavaan", SE="none")</span></span></span>
-<span class="r-in"><span><span class="co">#sem1&lt;- SEMrun(ig, data[train,], group[train], algo="ricf", n_rep=0)</span></span></span>
-<span class="r-in"><span><span class="va">sem1</span><span class="op">&lt;-</span> <span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>,<span class="op">]</span>, <span class="va">group</span><span class="op">[</span><span class="va">train</span><span class="op">]</span>, SE<span class="op">=</span><span class="st">"none"</span>, limit<span class="op">=</span><span class="fl">1000</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> NLMINB solver ended normally after 6 iterations </span>
+<span class="r-in"><span><span class="va">ig</span> <span class="op">&lt;-</span> <span class="va">alsData</span><span class="op">$</span><span class="va">graph</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="predict.SEM-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="va">sem0</span> <span class="op">&lt;-</span> <span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>,<span class="op">]</span>, algo<span class="op">=</span><span class="st">"ricf"</span>, n_rep<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RICF solver ended normally after 2 iterations </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 6.211221  srmr: 0.2861178 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 6.262846  srmr: 0.3040025 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="va">pred0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">sem0</span>, newdata<span class="op">=</span><span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>,<span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> </span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      amse        r2      srmr </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7653813 0.2346187 0.2948502 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># predictors, source+mediator+group; outcomes, source+mediator+sink</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">res1</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">sem1</span>, newdata<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">group</span>,<span class="va">data</span><span class="op">)</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>,<span class="op">]</span><span class="op">)</span> </span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">res1</span><span class="op">$</span><span class="va">PE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      amse     10452     84134       836      4747      4741      4744     79139 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8963810 1.1258657 0.9073936 0.6861219 0.7001557 1.0070725 1.1045920 0.6652474 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5530      5532      5533      5534      5535       842      1432      5600 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8679917 0.7365461 1.2300132 0.6637344 0.6675348 0.7262147 0.8576185 0.6667256 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5603      6300      5630     54205       317      5606      5608       581 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1.1063933 0.6068862 1.0886300 1.0784325 0.7720406 0.8841224 0.8326926 1.0285427 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       572       596       598      4217      6647      1616      7132      7133 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7379857 1.0832421 0.8036031 1.0731173 1.0383387 1.1300782 0.8195168 1.0913615 </span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
-<span class="r-in"><span><span class="co">#...with a binary outcome (1=case, 0=control)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">ig1</span><span class="op">&lt;-</span> <span class="fu"><a href="mapGraph.html">mapGraph</a></span><span class="op">(</span><span class="va">ig</span>, type<span class="op">=</span><span class="st">"outcome"</span><span class="op">)</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig1</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="predict.SEM-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span><span class="va">outcome</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">group</span> <span class="op">==</span> <span class="fl">0</span>, <span class="op">-</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">outcome</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> outcome</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  -1   1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  21 139 </span>
-<span class="r-in"><span><span class="va">data1</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">outcome</span>, <span class="va">data</span><span class="op">)</span>; <span class="va">data1</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      outcome        207         208      10000       284</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ALS2       1 -1.8273895 -0.45307006 -0.1360061 0.4530701</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ALS3       1 -2.5616910 -0.96201413  0.3160400 0.6762093</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ALS4       1 -0.8003346  0.82216031 -1.1521227 0.5613048</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ALS5       1 -2.1342965 -0.98709115  1.1521227 0.5064807</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ALS6       1 -2.0111279  0.02393297  0.5987578 0.1360061</span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">sem10</span> <span class="op">&lt;-</span> <span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig1</span>, <span class="va">data1</span><span class="op">[</span><span class="va">train</span>,<span class="op">]</span>, SE<span class="op">=</span><span class="st">"none"</span>, limit<span class="op">=</span><span class="fl">1000</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> NLMINB solver ended normally after 1 iterations </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 6.122632  srmr: 0.3101125 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-in"><span><span class="va">res10</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">sem10</span>, newdata<span class="op">=</span><span class="va">data1</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>,<span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> </span></span>
+<span class="r-in"><span><span class="va">ig1</span> <span class="op">&lt;-</span> <span class="fu"><a href="mapGraph.html">mapGraph</a></span><span class="op">(</span><span class="va">ig</span>, type <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig1</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="predict.SEM-2.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      amse   outcome     10452     84134       836      4747      4741      4744 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8828829 0.5509374 1.1160997 0.8591412 0.6957059 0.7435081 1.0773819 1.0733166 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     79139      5530      5532      5533      5534      5535       842      1432 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.6766548 0.9041601 0.8519291 1.2303948 0.8115211 0.6638488 0.7160223 0.8122749 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5600      5603      6300     54205      5606      5608       596      4217 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5717884 1.0343893 0.6118950 1.1161717 0.8886350 0.9082540 1.0675990 1.0817833 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      1616 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1.1257768 </span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">yobs</span><span class="op">&lt;-</span> <span class="va">group</span><span class="op">[</span><span class="op">-</span><span class="va">train</span><span class="op">]</span></span></span>
-<span class="r-in"><span><span class="va">yhat</span><span class="op">&lt;-</span> <span class="va">res10</span><span class="op">$</span><span class="va">Yhat</span><span class="op">[</span>,<span class="st">"outcome"</span><span class="op">]</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="benchmark.html">benchmark</a></span><span class="op">(</span><span class="va">yobs</span>, <span class="va">yhat</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     ypred</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> yobs  0  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    0  3  3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1 14 60</span>
+<span class="r-in"><span><span class="va">data1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">group</span>, <span class="va">data</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">data1</span><span class="op">[</span>,<span class="fl">5</span><span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      ALS2      ALS3      ALS4      ALS5      ALS6      ALS7 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4530701 0.6762093 0.5613048 0.5064807 0.1360061 0.7577341 </span>
+<span class="r-in"><span><span class="va">sem1</span> <span class="op">&lt;-</span> <span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig1</span>, <span class="va">data1</span><span class="op">[</span><span class="va">train</span>,<span class="op">]</span>, algo<span class="op">=</span><span class="st">"ricf"</span>, n_rep<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RICF solver ended normally after 2 iterations </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>        pre       rec        f1       mcc</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.952381 0.8108108 0.8759124 0.2001211</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 6.210737  srmr: 0.2857586 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="va">pred1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">sem1</span>, newdata<span class="op">=</span> <span class="va">data1</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>,<span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> </span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      amse        r2      srmr </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7556740 0.2443260 0.2849738 </span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#...with predictors, source nodes; outcomes, sink nodes</span></span></span>
-<span class="r-in"><span><span class="va">ig2</span><span class="op">&lt;-</span> <span class="fu"><a href="mapGraph.html">mapGraph</a></span><span class="op">(</span><span class="va">ig</span>, type<span class="op">=</span> <span class="st">"source"</span><span class="op">)</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># predictors, source nodes; outcomes, sink nodes</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">ig2</span> <span class="op">&lt;-</span> <span class="fu"><a href="mapGraph.html">mapGraph</a></span><span class="op">(</span><span class="va">ig</span>, type <span class="op">=</span> <span class="st">"source"</span><span class="op">)</span>; <span class="fu">gplot</span><span class="op">(</span><span class="va">ig2</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="predict.SEM-3.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">sem02</span> <span class="op">&lt;-</span> <span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig2</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>,<span class="op">]</span>, SE<span class="op">=</span><span class="st">"none"</span>, limit<span class="op">=</span><span class="fl">1000</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> NLMINB solver ended normally after 1 iterations </span>
+<span class="r-in"><span><span class="va">sem2</span> <span class="op">&lt;-</span> <span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig2</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>,<span class="op">]</span>, algo<span class="op">=</span><span class="st">"ricf"</span>, n_rep<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> RICF solver ended normally after 2 iterations </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 10.16978  srmr: 0.1295992 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 10.16805  srmr: 0.1282444 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-in"><span><span class="va">res02</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">sem02</span>, newdata<span class="op">=</span><span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>,<span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> </span></span>
-<span class="r-plt img"><img src="predict.SEM-4.png" alt="" width="700" height="433"></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      amse     10452     84134       836      4747      4741      4744     79139 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7550791 0.6146408 0.5114778 0.6960717 0.8871358 1.1343159 1.0664702 0.5043968 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5530      5532      5533      5534      5535 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.6128182 0.6257037 1.1708051 0.6069758 0.6301368 </span>
-<span class="r-in"><span><span class="co">#print(res02$PE)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">#...with 10-iterations of 10-fold cross-validation samples</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">res</span><span class="op">&lt;-</span> <span class="cn">NULL</span></span></span>
-<span class="r-in"><span><span class="kw">for</span> <span class="op">(</span><span class="va">r</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"rep = "</span>, <span class="va">r</span>, <span class="st">"\n"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu">SEMdeep</span><span class="fu">:::</span><span class="fu">createFolds</span><span class="op">(</span>y<span class="op">=</span><span class="va">data</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span>, k<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="kw">for</span> <span class="op">(</span><span class="va">k</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>   <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  k-fold = "</span>, <span class="va">k</span>, <span class="st">"\n"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>   <span class="va">semr</span><span class="op">&lt;-</span> <span class="fu">SEMdeep</span><span class="fu">:::</span><span class="fu">quiet</span><span class="op">(</span><span class="fu">SEMrun</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span>, SE<span class="op">=</span><span class="st">"none"</span>, limit<span class="op">=</span><span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span>   <span class="va">resr</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">semr</span>, newdata<span class="op">=</span><span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">idx</span><span class="op">[[</span><span class="va">k</span><span class="op">]</span><span class="op">]</span>, <span class="op">]</span><span class="op">)</span></span></span>
-<span class="r-in"><span>   <span class="va">res</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">res</span>, <span class="va">resr</span><span class="op">$</span><span class="va">PE</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">}</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rep =  10 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  9 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   k-fold =  10 </span>
-<span class="r-in"><span><span class="co">#average results</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">res</span>, <span class="fl">2</span>, <span class="va">mean</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      amse     10452     84134       836      4747      4741      4744     79139 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8203834 0.9924008 0.9373265 0.7580843 0.5039775 0.7884417 0.8785680 0.7226705 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5530      5532      5533      5534      5535       842      1432      5600 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8494899 0.7238154 0.9889105 0.8135880 0.7818244 0.5714233 0.7531485 0.8071404 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      5603      6300     54205      5606      5608       596      4217      1616 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.9521244 0.7174839 0.7012493 0.9636981 0.7552133 0.9749872 0.9882541 0.9449986 </span>
-<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="va">pred2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">sem2</span>, newdata<span class="op">=</span><span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>,<span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      amse        r2      srmr </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.6321508 0.3678492 0.2062241 </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
@@ -394,7 +204,7 @@ Bioinformatics, 38 (20), 4829–4830 &lt;https://doi.org/10.1093/bioinformatics/
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.0.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
 </div>
 
       </footer></div>

@@ -85,17 +85,6 @@ ig2 <- mapGraph(ig, type = "source"); gplot(ig2)
 sem2 <- SEMrun(ig2, data[train,], algo="ricf", n_rep=0)
 pred2 <- predict(sem2, newdata=data[-train,], verbose=TRUE)
 
-# predictors, graph nodes; outcomes, a categorical target variable
-# using SEMml(.., algo="sem") and classificationReport() functions
-
-outcome<- factor(ifelse(group == 1, "case", "control"))
-sem3<- SEMml(ig, data[train, ], outcome[train], algo="sem")
-pred3<- predict(sem3, data[-train, ], outcome[-train], verbose=TRUE)
-
-yobs<- outcome[-train]
-yhat<- pred3$Yhat[ ,levels(outcome)]
-classificationReport(yobs, yhat)$stats
-
 }
 \references{
 de Rooij M, Karch JD, Fokkema M, Bakk Z, Pratiwi BC, and Kelderman H

@@ -68,13 +68,13 @@ group<- alsData$group
 
 # ... with continuous outcomes 
 
-res1 <- SEMml(ig, data, algo="sem")
-res2 <- SEMml(ig, data, algo="tree")
-res3 <- SEMml(ig, data, algo="rf")
+res1 <- SEMml(ig, data, algo="tree")
+res2 <- SEMml(ig, data, algo="rf")
+res3 <- SEMml(ig, data, algo="xgb")
 res4 <- SEMml(ig, data, algo="nn")
 
 models <- list(res1,res2,res3,res4)
-names(models) <- c("sem","tree","rf","nn")
+names(models) <- c("tree","rf","xgb","nn")
 
 res.cv1 <- crossValidation(models, outcome=NULL, K=5, R=10)
 print(res.cv1$stats)
