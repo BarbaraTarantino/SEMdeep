@@ -1,8 +1,8 @@
 Package: SEMdeep
 Title: Structural Equation Modeling with Deep Neural Network and
         Machine Learning
-Version: 0.1.1
-Date: 2024-12-10
+Version: 1.0.0
+Date: 2025-01-20
 Authors@R: c(
   person("Mario", "Grassi", role="aut", email="mario.grassi@unipv.it"),
   person("Barbara", "Tarantino", role="cre", email="barbara.tarantino01@universitadipavia.it"))
@@ -11,7 +11,7 @@ Description: Training and validation of a custom (or data-driven) Structural
 	Machine Learning algorithms, which extend the fitting procedures of
 	the	'SEMgraph' R package <doi:10.32614/CRAN.package.SEMgraph>.
 Depends: SEMgraph (>= 1.2.2), igraph (>= 2.0.0), R (>= 4.0)
-Imports: cito, corpcor, doSNOW, foreach, kernelshap, lavaan,
+Imports: cito, corpcor, doSNOW, foreach, kernelshap, lavaan, glmnet,
         NeuralNetTools, nnet, progress, ranger, rpart, torch, xgboost
 URL: https://github.com/BarbaraTarantino/SEMdeep
 License: GPL (>= 3)
@@ -22,4 +22,4 @@ Author: Mario Grassi [aut],
   Barbara Tarantino [cre]
 Maintainer: Barbara Tarantino <barbara.tarantino01@universitadipavia.it>
 Repository: CRAN
-Packaged: 2024-12-16 17:34:39 UTC; mario
+Packaged: 2025-01-23 14:45:29 UTC; mario
