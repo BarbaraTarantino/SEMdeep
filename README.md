@@ -15,7 +15,7 @@ Structural Equation Modeling with Deep Neural Network and Machine Learning
   Gradient (or Connection) weight approach and significance tests of
   network inputs.
 
-![Anteprima PDF](docs/SEMdeep-scheme-1.png)
+![Anteprima PDF](docs/SEMdeep-workflow-1.png)
 
 ## Installation
 
