@@ -12,7 +12,7 @@
 Authors: **Barbara Tarantino**, **Mario Grassi**  
 Maintainer: *Barbara Tarantino (University of Pavia)*  
 CRAN: [https://CRAN.R-project.org/package=SEMdeep](https://CRAN.R-project.org/package=SEMdeep)  
-Companion package: [**SEMgraph**](https://github.com/BarbaraTarantino/SEMgraph)
+Companion package: [**SEMgraph**](https://CRAN.R-project.org/package=SEMgraph)
 
 ---
 
