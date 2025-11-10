@@ -11,7 +11,7 @@
 **SEMdeep: Structural Equation Modeling with Deep Neural Networks and Machine Learning**  
 Authors: **Barbara Tarantino**, **Mario Grassi**  
 Maintainer: *Barbara Tarantino (University of Pavia)*  
-CRAN: [https://CRAN.R-project.org/package=SEMdeep](https://CRAN.R-project.org/package=SEMdeep)  
+CRAN: [**SEMdeep**](https://CRAN.R-project.org/package=SEMdeep)  
 Companion package: [**SEMgraph**](https://CRAN.R-project.org/package=SEMgraph)
 
 ---
@@ -61,46 +61,61 @@ All preprocessing and graph compilation steps are handled by **SEMgraph**, while
 
 ---
 
-## Modeling Functions and Algorithms
+## Modeling Framework
 
 <img src="https://raw.githubusercontent.com/BarbaraTarantino/SEMdeep/main/man/figures/SEMdeep_slide3_algorithms.png" width="850"/>
 
-### SEMml()
+---
 
-`SEMml()` performs *machine learning–based SEM fitting* through a **nodewise approach**.  
-Each node with incoming edges is modeled as a function of its direct parents, resulting in a set of independent predictive models that follow the directed structure of the input graph.  
-Supported algorithms include **SEM**, **tree**, **random forest**, and **XGBoost**.  
-An optional lightweight bootstrap (Lam, 2002) can be used to estimate uncertainty around parameters.
+### **Input**
 
-### SEMdnn()
+**SEMdeep** operates on two main inputs:
+- A **data matrix**, containing observed or simulated variables.  
+- A **directed graph (adjacency matrix)** that encodes the hypothesized or data-driven causal relationships among variables.  
 
-`SEMdnn()` extends this logic to deep neural networks, supporting multiple fitting strategies:
-
-| Mode | Description | Reference |
-|------|--------------|-----------|
-| **Nodewise** | Fits one neural model per dependent variable | Zheng et al. (2020) |
-| **Layerwise** | Learns topological layers from sink to source nodes | Grassi & Tarantino (2025) |
-| **Structured** | Constrains weight matrices to reflect graph connectivity (Structured NN) | Chen et al. (2023) |
-| **NeuralGraph** | Trains a Neural Graphical Model under adjacency complement constraints | Shrivastava & Chajewska (2023) |
-
-Each network is trained using **torch**, enabling GPU acceleration and efficient backpropagation.  
-Bootstrapping can be applied to estimate confidence intervals for neural parameters.  
-This design allows the user to transition smoothly from classical SEMs to graph-aware deep learning.
+These inputs define the structural dependencies that guide model compilation, training, and explanation.
 
 ---
 
-## Model Input, Output, and Explainability
+### **Modeling Strategies**
 
-**Input:**  
-A data matrix and a directed graph (adjacency matrix) defining causal relationships between variables.  
+#### **SEMml()**
 
-**Output:**  
-- Nodewise or layerwise fitted models.  
-- Parameter estimates or learned weights.  
-- Model evaluation metrics (R², AMSE, SRMR).  
-- Explainability measures (`getConnectionWeight()`, `getGradientWeight()`, `getShapleyR2()`, `getLOCO()`).
+`SEMml()` performs *machine learning–based SEM fitting* through a **nodewise approach**.  
+Each node with incoming edges is modeled as a function of its direct parents, resulting in a set of independent predictive models that follow the directed structure of the input graph.  
+Supported algorithms include **SEM**, **tree**, **random forest**, and **XGBoost**, allowing flexible modeling of causal mechanisms at the node level.  
+Bootstrapping can be applied to estimate confidence intervals for ML parameters (Lam, 2002).
 
-Model explanation functions provide interpretable visualizations of the fitted structure, coloring edges by effect strength and direction.
+#### **SEMdnn()**
+
+`SEMdnn()` extends this logic to **deep neural networks (DNNs)**, supporting multiple graph-aware fitting strategies:
+
+| **Mode** | **Fitting Strategy** | **Description** | **Reference** |
+|-----------|----------------------|-----------------|----------------|
+| **Nodewise** | Equation-by-equation | Fits one neural model per dependent variable using its direct parent nodes as predictors, following the causal edge structure. | Zheng et al. (2020) |
+| **Layerwise** | Layer-by-layer | Trains sequential DNNs across graph layers, fitting each layer’s nodes as outputs of their upstream inputs. | Grassi & Tarantino (2025) |
+| **Structured** | Whole-graph (masked) | Builds a Structured Neural Network with weight matrices masked to match the graph adjacency. | Chen et al. (2023) |
+| **NeuralGraph** | Whole-graph (constrained) | Learns a Neural Graphical Model enforcing adjacency complement constraints for global causal consistency. | Shrivastava & Chajewska (2023) |
+
+Each network is trained using **torch**, enabling GPU acceleration and efficient backpropagation.  
+This design allows seamless transition from traditional SEMs to fully neural, graph-informed architectures.
+
+---
+
+### **Output and Explainability**
+
+**SEMdeep** produces both predictive and interpretable outputs:
+
+- **Model Estimates:** nodewise or layerwise fitted models with learned weights.  
+- **Evaluation Metrics:** model performance indicators such as *R²*, *AMSE*, and *SRMR*.  
+- **Explainability Measures:**  
+  - `getConnectionWeight()`  
+  - `getGradientWeight()`  
+  - `getShapleyR2()`  
+  - `getLOCO()`  
+
+These functions provide interpretable representations of the fitted structure, highlighting the strength and direction of effects through color-coded causal graphs.  
+Together, they make **SEMdeep** a bridge between predictive accuracy and causal transparency.
 
 ---
 
