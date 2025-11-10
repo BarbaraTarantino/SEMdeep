@@ -2,7 +2,7 @@
 
 [![CRAN status](https://www.r-pkg.org/badges/version/SEMdeep)](https://CRAN.R-project.org/package=SEMdeep)
 [![R-CMD-check](https://github.com/BarbaraTarantino/SEMdeep/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/BarbaraTarantino/SEMdeep/actions)
-[![pkgdown](https://github.com/BarbaraTarantino/SEMdeep/actions/workflows/pkgdown.yaml/badge.svg)](https://barbaratarantino.github.io/SEMdeep/)
+[![pkgdown site](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://barbaratarantino.github.io/SEMdeep/)
 
 ---
 
