@@ -135,7 +135,7 @@ install.packages("SEMdeep")
 
 # Development version
 remotes::install_github("BarbaraTarantino/SEMdeep")
-
+```
 ---
 
 ## Documentation
