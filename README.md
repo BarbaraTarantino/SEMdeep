@@ -87,10 +87,10 @@ The algorithm supports four machine learning modes:
 
 | **Algorithm** | **Model Type** | **Description** | **Reference** |
 |----------------|----------------|-----------------|----------------|
-| **sem** | Linear SEM | Classical structural model using the SEMrun method. | Grassi, Palluzzi & Tarantino (2022) |
+| **sem** | Linear SEM | Classical structural model using the `SEMrun` method. | Grassi, Palluzzi & Tarantino (2022) |
 | **tree** | CART | Decision-tree–based model using `rpart`, suitable for non-linear dependencies. | Breiman et al. (1984) |
 | **rf** | Random Forest | Ensemble tree model implemented via `ranger`, improving stability and variance reduction. | Liaw & Wiener (2002) |
-| **xgb** | XGBoost | Gradient-boosted decision trees optimized for high-dimensional data. | Chen & Guestrin (2016) |
+| **xgb** | XGBoost | Gradient-boosted decision tree via `xgboost` optimized for high-dimensional data. | Chen & Guestrin (2016) |
 
 By mapping data onto the input graph, `SEMml()` creates a set of nodewise models based on directed causal links.  
 If `boot != 0`, Lam’s (2002) *cheap bootstrapping* is applied to estimate 90% confidence intervals for ML parameters.
