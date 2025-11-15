@@ -205,9 +205,10 @@ Shrivastava, H., Chajewska, U. (2023). Neural graphical models. In European Conf
 
 Lam, H. (2022). Cheap Bootstrap for Input Uncertainty Quantification. Winter Simulation Conference (WSC), Singapore, 2022, pp. 2318-2329. https://doi.org/10.1109/WSC57314.2022.10015362 
 
+---
+
 ## Contact
 
 **Barbara Tarantino**    
 Email: [barbara.tarantino00@gmail.com](mailto:barbara.tarantino00@gmail.com)  
 GitHub: [https://github.com/BarbaraTarantino](https://github.com/BarbaraTarantino)
-
