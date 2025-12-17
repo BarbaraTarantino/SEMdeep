@@ -125,12 +125,12 @@ install.packages("SEMdeep", repos = c('https://barbaratarantino.r-universe.dev',
 
 # Documentation
 
-Comprehensive documentation, tutorials, and examples are available at:  
-**https://barbaratarantino.github.io/SEMdeep/**
+Comprehensive documentation, tutorials, and examples are available [HERE](https://barbaratarantino.github.io/SEMdeep/)
+
 
 ## Related Package
 
-- **SEMgraph** — [CRAN](https://cran.r-project.org/package=SEMgraph) | [GitHub](https://github.com//SEMgraph)
+- **SEMgraph** — [CRAN](https://cran.r-project.org/package=SEMgraph) | [GitHub](https://github.com/fernandoPalluzzi/SEMgraph/) 
 
 ---
 
