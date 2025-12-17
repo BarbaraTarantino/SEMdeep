@@ -44,8 +44,8 @@ ig<- alsData$graph
 data<- alsData$exprs
 data<- transformData(data)$data
 
-#ncores<- parallel::detectCores(logical = FALSE)
-ml0<- SEMml(ig, data, outcome=NULL, algo="rf", ncores=2)
+ncores<- parallel::detectCores(logical = FALSE)
+ml0<- SEMml(ig, data, outcome=NULL, algo="rf", ncores = ncores)
 
 vi05<- getVariableImportance(ml0, thr=0.5, verbose=TRUE)
 table(E(vi05$dag)$color)

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SEMdeep</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -104,7 +104,7 @@ prediction of the sink and mediators graph nodes.</p></li>
 <span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dnn0</span> <span class="op">&lt;-</span> <span class="fu"><a href="SEMdnn.html">SEMdnn</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, algo <span class="op">=</span><span class="st">"layerwise"</span>,</span></span>
 <span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, patience <span class="op">=</span> <span class="fl">10</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>      nboot <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pred.dnn</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">dnn0</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
@@ -119,7 +119,7 @@ prediction of the sink and mediators graph nodes.</p></li>
 <span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dnn1</span> <span class="op">&lt;-</span> <span class="fu"><a href="SEMdnn.html">SEMdnn</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, <span class="va">outcome</span><span class="op">[</span><span class="va">train</span><span class="op">]</span>, algo <span class="op">=</span><span class="st">"layerwise"</span>,</span></span>
 <span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, patience <span class="op">=</span> <span class="fl">10</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>      nboot <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -133,31 +133,31 @@ prediction of the sink and mediators graph nodes.</p></li>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 1 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4104707       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4131188       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 2 : z842 z1432 z5600 z5603 z6300 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4693277       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    train      val     base </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.468489      Inf 0.987500 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 3 : z54205 z5606 z5608 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5376277       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5406806       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 4 : z596 z4217 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8641988       Inf 0.9875001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8048253       Inf 0.9875001 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 5 : z1616 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8268933       Inf 0.9875001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8656592       Inf 0.9875001 </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 160 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-40.969572  srmr:0.182023</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 15.07302 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-41.053684  srmr:0.155733</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 12.44133 secs</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      amse        r2      srmr </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7186168 0.2813832 0.2397997 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7162445 0.2837555 0.2171037 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> RICF solver ended normally after 2 iterations </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> deviance/df: 6.262846  srmr: 0.3040025 </span>
@@ -167,47 +167,47 @@ prediction of the sink and mediators graph nodes.</p></li>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via DNN...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 1 : zcase zcontrol </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       train         val        base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.003214309         Inf 0.987500012 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      train        val       base </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.00532385        Inf 0.98750001 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 2 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4285718       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3875686       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 3 : z842 z1432 z5600 z5603 z6300 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4605743       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5413273       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 4 : z54205 z5606 z5608 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5376339       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5223952       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 5 : z596 z4217 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8655762       Inf 0.9875001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.9099474       Inf 0.9875001 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 6 : z1616 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8682160       Inf 0.9875001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8519142       Inf 0.9875001 </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 192 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-39.856559  srmr:0.177495</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 27.0571 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-40.336902  srmr:0.192747</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 13.84407 secs</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      amse        r2      srmr </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.6967868 0.3032132 0.2357844 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.6803337 0.3196663 0.2438066 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>          pred</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> yobs      case control</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   case      62      12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   case      65       9</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   control    1       5</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-plt img"><img src="predict.DNN-1.png" alt="" width="700" height="433"></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              precision    recall        f1 accuracy       mcc support</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> case         0.9841270 0.8378378 0.9051095   0.8375 0.4321455      74</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> control      0.2941176 0.8333333 0.4347826   0.8375 0.4321455       6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> macro avg    0.6391223 0.8355856 0.6699460   0.8375 0.4321455      80</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> weighted avg 0.9323763 0.8375000 0.8698350   0.8375 0.4321455      80</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> case         0.9848485 0.8783784 0.9285714    0.875 0.4933551      74</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> control      0.3571429 0.8333333 0.5000000    0.875 0.4933551       6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> macro avg    0.6709957 0.8558559 0.7142857    0.875 0.4933551      80</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> weighted avg 0.9377706 0.8750000 0.8964286    0.875 0.4933551      80</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              support_prop</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> case                0.925</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> control             0.075</span>
@@ -226,7 +226,7 @@ prediction of the sink and mediators graph nodes.</p></li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>

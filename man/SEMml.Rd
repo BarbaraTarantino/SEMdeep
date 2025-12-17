@@ -108,16 +108,17 @@ group<- alsData$group
 #...with train-test (0.5-0.5) samples
 set.seed(123)
 train<- sample(1:nrow(data), 0.5*nrow(data))
+ncores <- parallel::detectCores(logical = FALSE)
 
 start<- Sys.time()
 # ... tree
 res1<- SEMml(ig, data[train, ], algo="tree")
 
 # ... rf
-res2<- SEMml(ig, data[train, ], algo="rf")
+res2<- SEMml(ig, data[train, ], algo="rf", ncores = ncores)
 
 # ... xgb
-res3<- SEMml(ig, data[train, ], algo="xgb")
+res3<- SEMml(ig, data[train, ], algo="xgb", ncores = ncores)
 
 # ... sem
 res4<- SEMml(ig, data[train, ], algo="sem")

@@ -29,7 +29,7 @@ help from the torch developer."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">SEMdeep</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -325,7 +325,7 @@ Conference (WSC), Singapore, 2022, pp. 2318-2329. https://doi.org/10.1109/WSC573
 <span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dnn0</span><span class="op">&lt;-</span> <span class="fu">SEMdnn</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, algo <span class="op">=</span> <span class="st">"layerwise"</span>,</span></span>
 <span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, patience <span class="op">=</span> <span class="fl">10</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>      nboot <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -346,7 +346,7 @@ Conference (WSC), Singapore, 2022, pp. 2318-2329. https://doi.org/10.1109/WSC573
 <span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dnn1</span><span class="op">&lt;-</span> <span class="fu">SEMdnn</span><span class="op">(</span><span class="va">ig1</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, algo <span class="op">=</span> <span class="st">"layerwise"</span>,</span></span>
 <span class="r-in"><span>      hidden <span class="op">=</span> <span class="fl">5</span><span class="op">*</span><span class="va">K</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>    epochs <span class="op">=</span> <span class="fl">32</span>, patience <span class="op">=</span> <span class="fl">10</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    nboot <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -366,7 +366,7 @@ Conference (WSC), Singapore, 2022, pp. 2318-2329. https://doi.org/10.1109/WSC573
 <span class="r-in"><span><span class="va">start</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dnn2</span><span class="op">&lt;-</span> <span class="fu">SEMdnn</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, <span class="va">outcome</span><span class="op">[</span><span class="va">train</span><span class="op">]</span>, algo <span class="op">=</span> <span class="st">"layerwise"</span>,</span></span>
 <span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, patience <span class="op">=</span> <span class="fl">10</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>      nboot <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>,  verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -382,75 +382,75 @@ Conference (WSC), Singapore, 2022, pp. 2318-2329. https://doi.org/10.1109/WSC573
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 1 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3801113       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3830909       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 2 : z842 z1432 z5600 z5603 z6300 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    train      val     base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.503531      Inf 0.987500 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5071168       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 3 : z54205 z5606 z5608 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5394681       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    train      val     base </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.574218      Inf 0.987500 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 4 : z596 z4217 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8956626       Inf 0.9875001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7870750       Inf 0.9875001 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 5 : z1616 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8532046       Inf 0.9875001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8662748       Inf 0.9875001 </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 160 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-40.884373  srmr:0.187098</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 17.30914 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-40.972362  srmr:0.153875</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 13.73143 secs</span>
 <span class="r-plt img"><img src="SEMdnn-1.png" alt="" width="700" height="433"></span>
 <span class="r-plt img"><img src="SEMdnn-2.png" alt="" width="700" height="433"></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via DNN...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 1 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4475542       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    train      val     base </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.464351      Inf 0.987500 </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 32 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-20.963655  srmr:0.158763</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 16.0658 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-21.207845  srmr:0.164237</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 3.402986 secs</span>
 <span class="r-plt img"><img src="SEMdnn-3.png" alt="" width="700" height="433"></span>
 <span class="r-plt img"><img src="SEMdnn-4.png" alt="" width="700" height="433"></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via DNN...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 1 : zcase zcontrol </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       train         val        base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.003194495         Inf 0.987500012 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.007218269         Inf 0.987500012 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 2 : z10452 z84134 z836 z4747 z4741 z4744 z79139 z5530 z5532 z5533 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.3788583       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4185528       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 3 : z842 z1432 z5600 z5603 z6300 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4717255       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5245557       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 4 : z54205 z5606 z5608 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4962046       Inf 0.9875000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5877876       Inf 0.9875000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 5 : z596 z4217 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.9186465       Inf 0.9875001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7903771       Inf 0.9875001 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> layer 6 : z1616 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8630623       Inf 0.9875001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8544232       Inf 0.9875001 </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 192 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-39.110385  srmr:0.188061</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 26.72527 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-40.890996  srmr:0.167383</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 17.33236 secs</span>
 <span class="r-plt img"><img src="SEMdnn-5.png" alt="" width="700" height="433"></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  pink white </span>

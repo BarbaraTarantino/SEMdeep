@@ -19,7 +19,7 @@ times, where R is the number of mediators and sink nodes."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">SEMdeep</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -94,7 +94,7 @@ not be considered.</p></dd>
 Four algorithms can be specified:</p><ul><li><p><code>algo="sem"</code> (default) for a linear SEM, see <code><a href="https://rdrr.io/pkg/SEMgraph/man/SEMrun.html" class="external-link">SEMrun</a></code>.</p></li>
 <li><p><code>algo="tree"</code> for a CART model, see <code><a href="https://rdrr.io/pkg/rpart/man/rpart.html" class="external-link">rpart</a></code>.</p></li>
 <li><p><code>algo="rf"</code> for a random forest model, see <code><a href="http://imbs-hl.github.io/ranger/reference/ranger.html" class="external-link">ranger</a></code>.</p></li>
-<li><p><code>algo="xgb"</code> for a XGBoost model, see <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.train.html" class="external-link">xgboost</a></code>.</p></li>
+<li><p><code>algo="xgb"</code> for a XGBoost model, see <code><a href="https://rdrr.io/pkg/xgboost/man/xgboost.html" class="external-link">xgboost</a></code>.</p></li>
 </ul></dd>
 
 
@@ -218,7 +218,7 @@ Proceedings of the Winter Simulation Conference, 2318-2329.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> XGB solver ended normally after 23 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:70.10035  srmr:0.001439</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:69.930993  srmr:0.001418</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ... sem</span></span></span>
 <span class="r-in"><span><span class="va">res4</span><span class="op">&lt;-</span> <span class="fu">SEMml</span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, algo<span class="op">=</span><span class="st">"sem"</span><span class="op">)</span></span></span>
@@ -231,7 +231,7 @@ Proceedings of the Winter Simulation Conference, 2318-2329.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 6.972608 secs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 2.769274 secs</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#visualizaation of the colored dag for algo="sem"</span></span></span>
 <span class="r-in"><span><span class="fu">gplot</span><span class="op">(</span><span class="va">res4</span><span class="op">$</span><span class="va">graph</span>, l<span class="op">=</span><span class="st">"dot"</span>, main<span class="op">=</span><span class="st">"sem"</span><span class="op">)</span></span></span>
@@ -246,7 +246,7 @@ Proceedings of the Winter Simulation Conference, 2318-2329.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -33.16686964   0.23129978   0.48093636   0.08618768 </span>
 <span class="r-in"><span><span class="va">res3</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">fitIdx</span> <span class="co">#xgb</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         logL         amse         rmse         srmr </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7.010035e+01 1.865892e-04 1.365977e-02 1.439282e-03 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 69.930993394  0.000195125  0.013968717  0.001417510 </span>
 <span class="r-in"><span><span class="va">res4</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="va">fitIdx</span> <span class="co">#sem</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        logL        amse        rmse        srmr </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> -48.4412858   0.8574470   0.9259843   0.3064378 </span>
@@ -351,48 +351,48 @@ Proceedings of the Winter Simulation Conference, 2318-2329.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  10452  ~  6647  1.000     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 43 84134  ~  6647  1.000     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 38   596  ~  6647  1.000     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17  4747  ~  6647  0.263     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 17  4747  ~  6647  0.293     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 41 79139  ~  6647  1.000     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 27  5530  ~  6647  1.000     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 28  5532  ~  6647  1.000     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 29  5533  ~  6647  1.000     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 30  5534  ~  6647  1.000     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 31  5535  ~  6647  1.000     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 44   842  ~ 54205  0.694     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23 54205  ~   581  0.632     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24 54205  ~   572  0.104     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25 54205  ~   596  0.048     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26 54205  ~   598  0.216     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 45   842  ~   317  0.306     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 44   842  ~ 54205  0.652     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 23 54205  ~   581  0.625     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 24 54205  ~   572  0.122     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 25 54205  ~   596  0.057     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 26 54205  ~   598  0.196     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 45   842  ~   317  0.348     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 42   836  ~   842  1.000     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4   1616  ~  7132  0.430     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5   1616  ~  7133  0.570     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   1616  ~  7132  0.436     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   1616  ~  7133  0.564     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6   4217  ~  1616  1.000     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 36  5606  ~  4217  1.000     0     0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 37  5608  ~  4217  1.000     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2   1432  ~  5606  0.527     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 32  5600  ~  5606  0.409     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 34  5603  ~  5606  0.521     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 39  6300  ~  5606  0.381     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   1432  ~  5608  0.473     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 33  5600  ~  5608  0.591     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 35  5603  ~  5608  0.479     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 40  6300  ~  5608  0.619     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18  4747  ~  1432  0.300     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7   4741  ~  1432  0.397     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12  4744  ~  1432  0.266     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19  4747  ~  5600  0.092     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8   4741  ~  5600  0.142     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13  4744  ~  5600  0.349     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20  4747  ~  5603  0.194     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9   4741  ~  5603  0.264     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14  4744  ~  5603  0.202     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21  4747  ~  6300  0.036     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10  4741  ~  6300  0.028     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15  4744  ~  6300  0.047     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22  4747  ~  5630  0.115     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11  4741  ~  5630  0.168     0     0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16  4744  ~  5630  0.136     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   1432  ~  5606  0.487     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 32  5600  ~  5606  0.421     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 34  5603  ~  5606  0.548     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 39  6300  ~  5606  0.407     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   1432  ~  5608  0.513     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 33  5600  ~  5608  0.579     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 35  5603  ~  5608  0.452     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 40  6300  ~  5608  0.593     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18  4747  ~  1432  0.290     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   4741  ~  1432  0.441     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12  4744  ~  1432  0.210     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 19  4747  ~  5600  0.071     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   4741  ~  5600  0.166     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13  4744  ~  5600  0.248     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20  4747  ~  5603  0.192     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9   4741  ~  5603  0.223     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14  4744  ~  5603  0.327     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 21  4747  ~  6300  0.038     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10  4741  ~  6300  0.034     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15  4744  ~  6300  0.049     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 22  4747  ~  5630  0.116     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11  4741  ~  5630  0.136     0     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16  4744  ~  5630  0.166     0     0</span>
 <span class="r-in"><span><span class="fu">parameterEstimates</span><span class="op">(</span><span class="va">res4</span><span class="op">$</span><span class="va">fit</span><span class="op">)</span> <span class="co">#sem</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      lhs op   rhs VarImp lower upper</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  10452  ~  6647  0.411     0     0</span>
@@ -468,7 +468,7 @@ Proceedings of the Winter Simulation Conference, 2318-2329.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 0.92435872 0.07564128 0.17600941 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">res3</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span><span class="op">)</span><span class="op">$</span><span class="va">PE</span><span class="op">)</span> <span class="co">#xgb</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       amse         r2       srmr </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.97398929 0.02601071 0.15433519 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.97406302 0.02593698 0.15430562 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">res4</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span><span class="op">)</span><span class="op">$</span><span class="va">PE</span><span class="op">)</span> <span class="co">#sem</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      amse        r2      srmr </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 0.8572186 0.1427814 0.2972509 </span>

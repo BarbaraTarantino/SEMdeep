@@ -159,7 +159,7 @@
 #'
 #' @import SEMgraph
 #' @import igraph
-#' @importFrom graphics abline axis boxplot legend lines mtext par points polygon
+#' @importFrom graphics abline axis boxplot legend lines mtext par points polygon plot.new text    
 #' @importFrom grDevices rgb terrain.colors
 #' @importFrom stats aggregate as.formula coef coefficients cor density fitted formula 
 #'             lm model.matrix na.omit predict p.adjust quantile qt reshape rnorm runif sd
@@ -207,7 +207,7 @@
 #' start<- Sys.time()
 #' dnn0<- SEMdnn(ig, data[train, ], algo = "layerwise",
 #' 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-#' 			epochs = 32, patience = 10, verbose = TRUE)
+#' 			nboot = 0, epochs = 32, verbose = TRUE)
 #' end<- Sys.time()
 #' print(end-start)
 #' 
@@ -228,7 +228,7 @@
 #' start<- Sys.time()
 #' dnn1<- SEMdnn(ig1, data[train, ], algo = "layerwise",
 #' 			hidden = 5*K, link = "selu", bias = TRUE,
-#'			epochs = 32, patience = 10, verbose = TRUE)
+#'			nboot = 0, epochs = 32, verbose = TRUE)
 #' end<- Sys.time()
 #' print(end-start)
 #'
@@ -248,7 +248,7 @@
 #' start<- Sys.time()
 #' dnn2<- SEMdnn(ig, data[train, ], outcome[train], algo = "layerwise",
 #' 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-#' 			epochs = 32, patience = 10, verbose = TRUE)
+#' 			nboot = 0, epochs = 32,  verbose = TRUE)
 #' end<- Sys.time()
 #' print(end-start)
 #' 
@@ -354,7 +354,7 @@ SEMdnn <- function(graph, data, outcome = NULL, algo = "layerwise",
 	  
 	  #Reconstructing Torch Models
 	  for (b in 1:nboot) { #b=1
-	    for (l in 1:length(model[[1]])) {	#l=1
+	    for (l in 1:length(model[[1]])) { #l=1
 		  # Set parameters
 		  vx <- ncol(model[[b]][[l]]$data$X)
 		  vy <- ncol(model[[b]][[l]]$data$Y)
@@ -729,7 +729,7 @@ colorDAG <- function(dag, est, out, nboot, thr=NULL, verbose=FALSE, ...)
 #' start<- Sys.time()
 #' dnn0 <- SEMdnn(ig, data[train, ], algo ="layerwise",
 #' 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-#' 			epochs = 32, patience = 10, verbose = TRUE)
+#' 			nboot = 0, epochs = 32, verbose = TRUE)
 #' end<- Sys.time()
 #' print(end-start)
 #' pred.dnn <- predict(dnn0, data[-train, ], verbose=TRUE)
@@ -744,7 +744,7 @@ colorDAG <- function(dag, est, out, nboot, thr=NULL, verbose=FALSE, ...)
 #' start<- Sys.time()
 #' dnn1 <- SEMdnn(ig, data[train, ], outcome[train], algo ="layerwise",
 #' 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-#' 			epochs = 32, patience = 10, verbose = TRUE)
+#' 			nboot = 0, epochs = 32, verbose = TRUE)
 #' end<- Sys.time()
 #' print(end-start)
 #'
@@ -876,7 +876,7 @@ predict.DNN <- function(object, newdata, newoutcome = NULL, verbose=FALSE, ...)
 #'
 #' dnn0<- SEMdnn(ig, data[train, ], outcome = NULL, algo= "structured",
 #' 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-#' 			epochs = 32, patience = 10, verbose = TRUE)
+#' 			nboot = 0, epochs = 32, verbose = TRUE)
 #' 
 #' cw<- getConnectionWeight(dnn0, thr = 0.3, verbose = FALSE)
 #' gplot(cw$dag, l="circo")
@@ -1013,7 +1013,7 @@ getConnectionWeight <- function(object, thr = NULL, verbose = FALSE, ...)
 #'
 #' dnn0<- SEMdnn(ig, data[train, ], outcome = NULL, algo= "neuralgraph",
 #' 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-#' 			epochs = 32, patience = 10, verbose = TRUE)
+#' 			nboot = 0, epochs = 32, verbose = TRUE)
 #' 
 #' gw<- getGradientWeight(dnn0, thr = 0.3, verbose = FALSE)
 #' gplot(gw$dag, l="circo")
@@ -1189,7 +1189,7 @@ getMarginalEffects <- function(modelY, y, epsilon = 0.1, ...)
 #'
 #' dnn0<- SEMdnn(ig, data[train, ], outcome = NULL, algo= "nodewise",
 #' 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-#' 			epochs = 32, patience = 10, verbose = TRUE)
+#' 			nboot = 0, epochs = 32, verbose = TRUE)
 #' 
 #' st<- getSignificanceTest(dnn0, thr = NULL, verbose = FALSE)
 #' gplot(st$dag, l="circo")

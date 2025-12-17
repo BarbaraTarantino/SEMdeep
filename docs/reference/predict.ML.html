@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SEMdeep</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -135,10 +135,10 @@ prediction of the sink and mediators graph nodes.</p></li>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> XGB solver ended normally after 23 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:70.10035  srmr:0.001439</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:69.930993  srmr:0.001418</span>
 <span class="r-in"><span><span class="va">mse3</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">res3</span>, <span class="va">data</span><span class="op">[</span><span class="op">-</span><span class="va">train</span>, <span class="op">]</span>, verbose<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       amse         r2       srmr </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.97398929 0.02601071 0.15433519 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.97406302 0.02593698 0.15430562 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ... sem</span></span></span>
 <span class="r-in"><span><span class="va">res4</span><span class="op">&lt;-</span> <span class="fu"><a href="SEMml.html">SEMml</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, algo<span class="op">=</span><span class="st">"sem"</span><span class="op">)</span></span></span>
@@ -153,7 +153,7 @@ prediction of the sink and mediators graph nodes.</p></li>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 0.8572186 0.1427814 0.2972509 </span>
 <span class="r-in"><span><span class="va">end</span><span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">end</span><span class="op">-</span><span class="va">start</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 6.890379 secs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Time difference of 3.014056 secs</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#...with a categorical (as.factor) outcome</span></span></span>
 <span class="r-in"><span><span class="va">outcome</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">group</span> <span class="op">==</span> <span class="fl">0</span>, <span class="st">"control"</span>, <span class="st">"case"</span><span class="op">)</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">outcome</span><span class="op">)</span> </span></span>

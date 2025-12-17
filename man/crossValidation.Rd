@@ -65,24 +65,25 @@ ig<- alsData$graph
 data<- alsData$exprs
 data<- transformData(data)$data
 group<- alsData$group
+ncores<- parallel::detectCores(logical = FALSE)
 
 # ... with continuous outcomes 
 
 res1 <- SEMml(ig, data, algo="tree")
-res2 <- SEMml(ig, data, algo="rf")
-res3 <- SEMml(ig, data, algo="xgb")
+res2 <- SEMml(ig, data, algo="rf", ncores=ncores)
+#res3 <- SEMml(ig, data, algo="xgb", ncores=ncores)
 res4 <- SEMml(ig, data, algo="sem")
 
-models <- list(res1,res2,res3,res4)
-names(models) <- c("tree","rf","xgb","sem")
+models <- list(res1,res2,res4)
+names(models) <- c("tree","rf","sem")
 
-res.cv1 <- crossValidation(models, outcome=NULL, K=5, R=10)
+res.cv1 <- crossValidation(models, outcome=NULL, K=5, R=5)
 print(res.cv1$stats)
 
 #... with a categorical (as.factor) outcome
 
 outcome <- factor(ifelse(group == 0, "control", "case"))
-res.cv2 <- crossValidation(models, outcome=outcome, K=5, R=10)
+res.cv2 <- crossValidation(models, outcome=outcome, K=5, R=5)
 print(res.cv2$stats)
 }
 

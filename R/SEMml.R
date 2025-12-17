@@ -121,16 +121,17 @@
 #' #...with train-test (0.5-0.5) samples
 #' set.seed(123)
 #' train<- sample(1:nrow(data), 0.5*nrow(data))
+#' ncores <- parallel::detectCores(logical = FALSE)
 #'
 #' start<- Sys.time()
 #' # ... tree
 #' res1<- SEMml(ig, data[train, ], algo="tree")
 #' 
 #' # ... rf
-#' res2<- SEMml(ig, data[train, ], algo="rf")
+#' res2<- SEMml(ig, data[train, ], algo="rf", ncores = ncores)
 #' 
 #' # ... xgb
-#' res3<- SEMml(ig, data[train, ], algo="xgb")
+#' res3<- SEMml(ig, data[train, ], algo="xgb", ncores = ncores)
 #'
 #' # ... sem
 #' res4<- SEMml(ig, data[train, ], algo="sem")
@@ -330,15 +331,17 @@ parameterEstimates.ML <- function(dag, data, algo, nboot, ncores, ...)
 	  pb0$tick()
 	  X <- vx[[x]]
 	  Y <- names(y)[x]
-	  ml.fit <- xgboost::xgboost(data = as.matrix(Z_train[, X]),
-						label = Z_train[, Y],	
+	  ml.fit <- xgboost::xgboost(x = as.matrix(Z_train[, X]),
+						y = Z_train[, Y],	
+						objective = "reg:squarederror", #NULL
+						nrounds = 100, #niter
+						max_depth = 6, #default
+						learning_rate = 0.3, #default
+						nthreads = ncores, #0, use all cores
 						booster = "gbtree", #tree based model
 						tree_method = "hist", #faster hist algo
-						max.depth = 6, #default
-						nrounds = 100, #niter
 						#device = "cpu", #default
-						nthread = ncores, #-1, use all cores
-						verbose = 0)   #silent			 
+						verbosity = 0) #silent			 
 	 })
 	 #}, cl=NULL)												
 	}
@@ -406,6 +409,7 @@ parameterEstimates.ML <- function(dag, data, algo, nboot, ncores, ...)
 #' #...with train-test (0.5-0.5) samples
 #' set.seed(123)
 #' train<- sample(1:nrow(data), 0.5*nrow(data))
+#' ncores <- parallel::detectCores(logical = FALSE)
 #'
 #' start<- Sys.time()
 #' # ... tree
@@ -413,11 +417,11 @@ parameterEstimates.ML <- function(dag, data, algo, nboot, ncores, ...)
 #' mse1<- predict(res1, data[-train, ], verbose=TRUE)
 #'
 #' # ... rf
-#' res2<- SEMml(ig, data[train, ], algo="rf")
+#' res2<- SEMml(ig, data[train, ], algo="rf", ncores = ncores)
 #' mse2<- predict(res2, data[-train, ], verbose=TRUE)
 #' 
 #' # ... xgb
-#' res3<- SEMml(ig, data[train, ], algo="xgb")
+#' res3<- SEMml(ig, data[train, ], algo="xgb", ncores = ncores)
 #' mse3<- predict(res3, data[-train, ], verbose=TRUE)
 #' 
 #' # ... sem
@@ -469,7 +473,7 @@ predict.ML <- function(object, newdata, newoutcome=NULL, ncores=2, verbose=FALSE
 	 vx <- all.vars(fm$old_formula[[j]])[-1]
 	 if (inherits(fit, "ranger")){
 	  pred <- predict(fit, Z_test, num.threads = ncores)$predictions
-	 } else if (inherits(fit, "xgb.Booster")){
+	 } else if (inherits(fit, "xgboost")){
 	  pred <- predict(fit, as.matrix(Z_test[,vx]))
 	 } else {
 	  pred <- predict(fit, data.frame(Z_test))
@@ -536,8 +540,8 @@ predict.ML <- function(object, newdata, newoutcome=NULL, ncores=2, verbose=FALSE
 #' data<- alsData$exprs
 #' data<- transformData(data)$data
 #'
-#' #ncores<- parallel::detectCores(logical = FALSE)
-#' ml0<- SEMml(ig, data, outcome=NULL, algo="rf", ncores=2)
+#' ncores<- parallel::detectCores(logical = FALSE)
+#' ml0<- SEMml(ig, data, outcome=NULL, algo="rf", ncores = ncores)
 #'
 #' vi05<- getVariableImportance(ml0, thr=0.5, verbose=TRUE)
 #' table(E(vi05$dag)$color)
@@ -548,7 +552,7 @@ predict.ML <- function(object, newdata, newoutcome=NULL, ncores=2, verbose=FALSE
 getVariableImportance <- function(object, thr = NULL, verbose = FALSE, ...)
 {
 	#stopifnot(inherits(object, c("SEM", "ML")))
-	ml0 <- c("SEM", "rpart", "ranger", "xgb.Booster")
+	ml0 <- c("SEM", "rpart", "ranger", "xgboost")
 	stopifnot(inherits(object$model[[1]][[1]], ml0))
 		
 	# Set ML objects
@@ -590,14 +594,14 @@ getVariableImportance <- function(object, thr = NULL, verbose = FALSE, ...)
 			vim <- ranger::importance(fit[[j]])
 			vim <- as.numeric(vim[X])
 		 } 
-		 if (inherits(fit[[1]], "xgb.Booster")) {
-			fit[[j]]$feature_names <- X
+		 if (inherits(fit[[1]], "xgboost")) {
+			#fit[[j]]$feature_names <- X
 			vim <- 1
 			if (length(X) > 1) {
-			vimx <- xgboost::xgb.importance(model=fit[[j]])
-			vim <- unlist(vimx[,2])
-			names(vim) <- unlist(vimx[,1])
-			vim <- as.numeric(vim[X])
+			 vimx <- xgboost::xgb.importance(model=fit[[j]])
+			 vim <- unlist(vimx[,2])
+			 names(vim) <- unlist(vimx[,1])
+			 vim <- as.numeric(vim[X])
 			}
 		 }
 
@@ -846,7 +850,7 @@ shapR2<- function(fitj, fmj, Z_train, Z_test, ncores, ...)
 	  p0 <- rep(0, length(vy))
 	  if (inherits(fitj, "ranger")){
 	    pred <- predict(fitj, z_test, num.threads = ncores)$predictions
-	  } else if (inherits(fitj, "xgb.Booster")){
+	  } else if (inherits(fitj, "xgboost")){
 	    pred <- predict(fitj, as.matrix(z_test[, vx]))
 	  } else {
 	    pred <- predict(fitj, data.frame(z_test))
@@ -878,9 +882,9 @@ shapR2<- function(fitj, fmj, Z_train, Z_test, ncores, ...)
 		predict(x, newdata, num.threads = ncores)$predictions
 	  }
  	}
-	if (inherits(fitj, "xgb.Booster")) {
+	if (inherits(fitj, "xgboost")) {
 	  predict_model <- function(x, newdata) {
-		predict(x, as.matrix(newdata[ ,x$feature_names]))
+		predict(x, as.matrix(newdata))
 	  }
  	}
 
@@ -1123,7 +1127,7 @@ estLOCO<- function(fit, fm, Z_test, ncores, ...)
 
 	  if (inherits(fitj, "ranger")){
 	   Yhat <- predict(fitj, Z, num.threads = ncores)$predictions
-	  } else if (inherits(fitj, "xgb.Booster")){
+	  } else if (inherits(fitj, "xgboost")){
 	   Yhat <- predict(fitj, as.matrix(Z[,vx]))
 	  } else {
 	   Yhat <- predict(fitj, Z)
@@ -1144,7 +1148,7 @@ estLOCO<- function(fit, fm, Z_test, ncores, ...)
 
 		 if (inherits(fitj, "ranger")){
 		  Yhatk <- predict(fitj, Zk, num.threads = ncores)$predictions
-		 } else if (inherits(fitj, "xgb.Booster")){
+		 } else if (inherits(fitj, "xgboost")){
 		  Yhatk <- predict(fitj, as.matrix(Zk[,vx]))
 		 } else {
 		  Yhatk <- predict(fitj, Zk)

@@ -211,7 +211,7 @@ train<- sample(1:nrow(data), 0.5*nrow(data))
 start<- Sys.time()
 dnn0<- SEMdnn(ig, data[train, ], algo = "layerwise",
 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-			epochs = 32, patience = 10, verbose = TRUE)
+			nboot = 0, epochs = 32, verbose = TRUE)
 end<- Sys.time()
 print(end-start)
 
@@ -232,7 +232,7 @@ ig1<- mapGraph(ig, type="source"); gplot(ig1)
 start<- Sys.time()
 dnn1<- SEMdnn(ig1, data[train, ], algo = "layerwise",
 			hidden = 5*K, link = "selu", bias = TRUE,
-		epochs = 32, patience = 10, verbose = TRUE)
+		nboot = 0, epochs = 32, verbose = TRUE)
 end<- Sys.time()
 print(end-start)
 
@@ -252,7 +252,7 @@ outcome<- factor(ifelse(group == 0, "control", "case")); table(outcome)
 start<- Sys.time()
 dnn2<- SEMdnn(ig, data[train, ], outcome[train], algo = "layerwise",
 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-			epochs = 32, patience = 10, verbose = TRUE)
+			nboot = 0, epochs = 32,  verbose = TRUE)
 end<- Sys.time()
 print(end-start)
 

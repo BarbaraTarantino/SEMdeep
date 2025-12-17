@@ -1,2 +1,5 @@
-^SEMdeep\.Rproj$
+^.*\.Rproj$
 ^\.Rproj\.user$
+^_pkgdown\.yml$
+^pkgdown$
+^docs$

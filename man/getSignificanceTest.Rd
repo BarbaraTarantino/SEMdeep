@@ -64,7 +64,7 @@ train<- sample(1:nrow(data), 0.5*nrow(data))
 
 dnn0<- SEMdnn(ig, data[train, ], outcome = NULL, algo= "nodewise",
 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-			epochs = 32, patience = 10, verbose = TRUE)
+			nboot = 0, epochs = 32, verbose = TRUE)
 
 st<- getSignificanceTest(dnn0, thr = NULL, verbose = FALSE)
 gplot(st$dag, l="circo")

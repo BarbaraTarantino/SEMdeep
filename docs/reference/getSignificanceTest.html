@@ -15,7 +15,7 @@ proposed by Mohammadi (2018)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">SEMdeep</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -129,7 +129,7 @@ Neurocomputing 2018; 273: 304-322. https://doi.org/10.1016/j.neucom.2017.08.007<
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">dnn0</span><span class="op">&lt;-</span> <span class="fu"><a href="SEMdnn.html">SEMdnn</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, outcome <span class="op">=</span> <span class="cn">NULL</span>, algo<span class="op">=</span> <span class="st">"nodewise"</span>,</span></span>
 <span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, patience <span class="op">=</span> <span class="fl">10</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>      nboot <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">st</span><span class="op">&lt;-</span> <span class="fu">getSignificanceTest</span><span class="op">(</span><span class="va">dnn0</span>, thr <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">gplot</span><span class="op">(</span><span class="va">st</span><span class="op">$</span><span class="va">dag</span>, l<span class="op">=</span><span class="st">"circo"</span><span class="op">)</span></span></span>
@@ -140,44 +140,44 @@ Neurocomputing 2018; 273: 304-322. https://doi.org/10.1016/j.neucom.2017.08.007<
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> node 1 : zAkt </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5872679       Inf 0.9988675 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5966021       Inf 0.9988675 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> node 2 : zErk </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7163617       Inf 0.9988675 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.7381413       Inf 0.9988675 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> node 3 : zJnk </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8443861       Inf 0.9988675 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8443169       Inf 0.9988675 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> node 4 : zMek </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4878106       Inf 0.9988675 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4791432       Inf 0.9988675 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> node 5 : zP38 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4421826       Inf 0.9988676 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.4424686       Inf 0.9988676 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> node 6 : zPIP2 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5390199       Inf 0.9988675 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5484106       Inf 0.9988675 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> node 7 : zPKC </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.9136113       Inf 0.9988676 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.9163345       Inf 0.9988676 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> node 8 : zPlcg </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8301485       Inf 0.9988675 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8234547       Inf 0.9988675 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> node 9 : zRaf </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     train       val      base </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.8999817       Inf 0.9988676 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.9082495       Inf 0.9988676 </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 288 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-29.093807  srmr:0.257738</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-29.103546  srmr:0.274008</span>
 <span class="r-plt img"><img src="getSignificanceTest-1.png" alt="" width="700" height="433"></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     gray50       red2 royalblue3 </span>
@@ -195,7 +195,7 @@ Neurocomputing 2018; 273: 304-322. https://doi.org/10.1016/j.neucom.2017.08.007<
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>

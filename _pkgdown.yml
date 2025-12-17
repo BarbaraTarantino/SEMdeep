@@ -1,0 +1,8 @@
+template:
+  bootstrap: 5
+
+url: https://BarbaraTarantino.github.io/SEMdeep/
+
+home:
+  title: SEMdeep
+  description: Structural Equation Modeling with DNN and ML Algorithms

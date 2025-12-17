@@ -70,7 +70,7 @@ train<- sample(1:nrow(data), 0.5*nrow(data))
 
 dnn0<- SEMdnn(ig, data[train, ], outcome = NULL, algo= "structured",
 			hidden = c(10,10,10), link = "selu", bias = TRUE,
-			epochs = 32, patience = 10, verbose = TRUE)
+			nboot = 0, epochs = 32, verbose = TRUE)
 
 cw<- getConnectionWeight(dnn0, thr = 0.3, verbose = FALSE)
 gplot(cw$dag, l="circo")

@@ -498,6 +498,151 @@ buildLevels <- function(dag, ...)
 	return(l3)
 }
 
+#' @title Training history evaluation of a DNN model
+#'
+#' @description Display a (r,c) panel history plot from \code{SEMdnn()} output,
+#' with x = number of epochs, y = training loss for each MLP model and bootstrap
+#' sample, if \code{nboot} > 0.
+#'
+#' @param object A model fitting object from \code{SEMdnn()} function.
+#' @param size number of the multiple plots (default, \code{size = NULL}:
+#' all training MLP for each bootstrap sample are visualized).
+#' @param r number of rows of the plot layout (default, \code{r = 2}).
+#' @param c number of columns of the plot layout (default, \code{c = 2}).
+#' @param ... Currently ignored.
+#'
+#' @details The training history plot can provide an indication about the training
+#' of the model, such as: (i) its speed of convergence over epochs (slope), (ii)
+#' whether the model may have already converged (plateau of the line), (iii) whether
+#' the mode may be over-learning the training data (inflection for validation line),
+#' and more.
+#'
+#' @return Invisibly returns a data.frame of the training loss history.
+#'
+#' @author Mario Grassi \email{mario.grassi@unipv.it}
+#'
+#' @examples
+#'
+#' \donttest{
+#' if (torch::torch_is_installed()){
+#'
+#' # Load Sachs data (pkc)
+#' ig<- sachs$graph
+#' data<- sachs$pkc
+#' data<- transformData(data)$data
+#' group<- sachs$group
+#' 
+#' #...with train-test (0.5-0.5) samples
+#' set.seed(123)
+#' train<- sample(1:nrow(data), 0.5*nrow(data))
+#'
+#' dnn <- SEMdnn(ig, data[train, ], algo = "layerwise",
+#'               hidden = 10, link = "relu", loss = "mse",
+#'               validation = 0.2, nboot = 0, epochs = 32)
+#'
+#' tr <- trainingReport(dnn); tr
+#' }
+#' }
+#'
+#' @export
+#'
+trainingReport <- function(object, size = NULL, r = 2, c = 2, ...)
+{
+    # Setup panel layout
+	model <- object$model
+    M <- length(object$model[[1]])
+    B <- length(object$model)
+	if (is.null(size)) size <- M
+    
+    if (size >= B) {
+        B <- 1:length(object$model)
+    } else {
+        B <- sort(sample(1:length(object$model), size = size))
+    }
+    
+    if (size >= M) {
+        M <- 1:length(object$model[[1]])
+    } else {
+        M <- sort(sample(1:length(object$model[[1]]), size = size))
+    }
+    
+    old.par <- par(no.readonly = TRUE)
+    par(mfrow = c(r, c), mar = rep(3, 4))
+    
+    # Store loop results
+    results <- data.frame()
+    
+    for (b in B) {
+        fit <- model[[b]]
+        
+        for (m in M) {
+            train <- na.omit(fit[[m]]$losses[,2])
+            valid <- na.omit(fit[[m]]$losses[,3])
+            base <- fit[[m]]$loss[3]
+            burnin <- which(train > 2*base)
+            if (length(burnin) > 0) {
+                train <- train[-burnin]
+                valid <- valid[-burnin]
+            }
+            epoch <- ifelse(length(valid) > 0, length(valid), length(train))
+            x <- 1:epoch
+            tlast <- train[epoch]
+			vlast <- valid[epoch]
+            ymax <- max(base + 0.1, max(train))
+            
+            plot(x = x, y = train[x], type = "b", ylim = c(0, ymax), col = "blue",
+                 xlab = "epoch", ylab = "loss",
+                 main = paste0("boot = ", b, ": loss (model ", m, ") = ", round(tlast, 3)))
+            
+            abline(h=base, col="green")
+            if (length(valid) > 0) lines(x=x, y=valid[x], type="b", col="red")
+            
+            # Store results
+            results <- rbind(results, data.frame(
+                Boot = b - 1,
+                Model = m,
+                Final_loss = round(tlast, 3),
+				Valid_loss = round(vlast, 3),
+                Base_loss = round(base, 3)
+            ))
+            
+            Sys.sleep(2)
+        }
+    }
+    
+    # Create the last panel with legend and results table
+    plot.new()
+    rownames(results) <- NULL
+	par(mar = c(1, 1, 1, 1))
+	
+    # Add legend at the top
+    legend("top", legend = c("Baseline", "Training", "Validation"),
+           col = c("green", "blue", "red"), lty = 1, lwd = 2, bty = "n",
+           cex = 1.2, title = "Legend", title.adj = 0.5)
+    
+    # Add results table below legend
+    par(new = TRUE)
+    plot(0, 0, type = "n", axes = FALSE, xlab = "", ylab = "",
+         xlim = c(0, 1), ylim = c(0, 1))
+    
+    # Display summary statistics
+	text(0.5, 0.6, "\nSummary Results", cex = 1.2, font = 2)
+
+    summary_text <- paste0(
+        "Total Bootstraps: ", length(unique(results$Boot)), "\n",
+        "Total Models: ", nrow(results), "\n",
+        "Mean Final loss: ", round(mean(results$Final_loss), 3), "\n",
+        "SD Final loss: ", round(sd(results$Final_loss), 3), "\n",
+        "Mean Base loss: ", round(mean(results$Base_loss), 3)
+    )
+    
+	text(0.5, 0.3, summary_text, cex = 1, family = "mono")
+    
+    on.exit(par(old.par))
+    
+    invisible(results)
+}
+
 #' @title Prediction evaluation report of a classification model
 #'
 #' @description This function builds a report showing the main classification 
@@ -752,24 +897,25 @@ dplot<- function(yobs, yhat, thr, rec, ...)
 #' data<- alsData$exprs
 #' data<- transformData(data)$data
 #' group<- alsData$group
+#' ncores<- parallel::detectCores(logical = FALSE)
 #' 
 #' # ... with continuous outcomes 
 #'
 #' res1 <- SEMml(ig, data, algo="tree")
-#' res2 <- SEMml(ig, data, algo="rf")
-#' res3 <- SEMml(ig, data, algo="xgb")
+#' res2 <- SEMml(ig, data, algo="rf", ncores=ncores)
+#' #res3 <- SEMml(ig, data, algo="xgb", ncores=ncores)
 #' res4 <- SEMml(ig, data, algo="sem")
 #' 
-#' models <- list(res1,res2,res3,res4)
-#' names(models) <- c("tree","rf","xgb","sem")
+#' models <- list(res1,res2,res4)
+#' names(models) <- c("tree","rf","sem")
 #' 
-#' res.cv1 <- crossValidation(models, outcome=NULL, K=5, R=10)
+#' res.cv1 <- crossValidation(models, outcome=NULL, K=5, R=5)
 #' print(res.cv1$stats)
 #' 
 #' #... with a categorical (as.factor) outcome
 #' 
 #' outcome <- factor(ifelse(group == 0, "control", "case"))
-#' res.cv2 <- crossValidation(models, outcome=outcome, K=5, R=10)
+#' res.cv2 <- crossValidation(models, outcome=outcome, K=5, R=5)
 #' print(res.cv2$stats)
 #' }
 #'
@@ -900,7 +1046,7 @@ crossValidationR1 <- function(models, outcome, K, ncores, seed = NULL, ...)
 			   res0 <- quiet(SEMgraph::SEMrun(graph, data[train, ], algo="ricf", n_rep=0))
 			  }
 			  if (inherits(object, "ML")) {
-			   ml0 <- c("SEM", "rpart", "ranger", "xgb.Booster")
+			   ml0 <- c("SEM", "rpart", "ranger", "xgboost")
 			   ml1 <- c("sem", "tree", "rf", "xgb")
 			  for (ml in 1:4){
 			   if (inherits(object$model[[1]][[1]], ml0[ml])) algo<- ml1[ml]

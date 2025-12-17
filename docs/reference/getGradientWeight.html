@@ -11,7 +11,7 @@ as discussed by Scholbeck et al (2024)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">SEMdeep</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,7 +126,7 @@ functions. Data Min Knowl Disc 38, 2997–3042 (2024). https://doi.org/10.1007/s
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">dnn0</span><span class="op">&lt;-</span> <span class="fu"><a href="SEMdnn.html">SEMdnn</a></span><span class="op">(</span><span class="va">ig</span>, <span class="va">data</span><span class="op">[</span><span class="va">train</span>, <span class="op">]</span>, outcome <span class="op">=</span> <span class="cn">NULL</span>, algo<span class="op">=</span> <span class="st">"neuralgraph"</span>,</span></span>
 <span class="r-in"><span>      hidden <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">10</span>,<span class="fl">10</span><span class="op">)</span>, link <span class="op">=</span> <span class="st">"selu"</span>, bias <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>      epochs <span class="op">=</span> <span class="fl">32</span>, patience <span class="op">=</span> <span class="fl">10</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>      nboot <span class="op">=</span> <span class="fl">0</span>, epochs <span class="op">=</span> <span class="fl">32</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">gw</span><span class="op">&lt;-</span> <span class="fu">getGradientWeight</span><span class="op">(</span><span class="va">dnn0</span>, thr <span class="op">=</span> <span class="fl">0.3</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">gplot</span><span class="op">(</span><span class="va">gw</span><span class="op">$</span><span class="va">dag</span>, l<span class="op">=</span><span class="st">"circo"</span><span class="op">)</span></span></span>
@@ -134,18 +134,18 @@ functions. Data Min Knowl Disc 38, 2997–3042 (2024). https://doi.org/10.1007/s
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> DAG conversion : TRUE</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running SEM model via DNN...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Loss at epoch 10: 0.237081, l1: 0.19671</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Loss at epoch 20: 0.139642, l1: 0.13101</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Loss at epoch 30: 0.088302, l1: 0.09489</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Loss at epoch 10: 0.242230, l1: 0.19374</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Loss at epoch 20: 0.161510, l1: 0.12524</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Loss at epoch 30: 0.140234, l1: 0.10337</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>  done.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> DNN solver ended normally after 32 iterations</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-19.646363  srmr:0.06331</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>  logL:-18.062404  srmr:0.060887</span>
 <span class="r-plt img"><img src="getGradientWeight-1.png" alt="" width="700" height="433"></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     gray50       red2 royalblue3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         14          3          1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> gray50   red2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     16      2 </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
@@ -159,7 +159,7 @@ functions. Data Min Knowl Disc 38, 2997–3042 (2024). https://doi.org/10.1007/s
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>

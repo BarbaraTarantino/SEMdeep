@@ -1,214 +1,60 @@
-# SEMdeep <img src="https://raw.githubusercontent.com/BarbaraTarantino/SEMdeep/main/man/figures/hex_SEMdeep.png" align="right" width="140"/>
+# SEMdeep
+Structural Equation Modeling with Deep Neural Network and Machine Learning 
 
-[![CRAN status](https://www.r-pkg.org/badges/version/SEMdeep)](https://CRAN.R-project.org/package=SEMdeep)
-[![R-CMD-check](https://github.com/BarbaraTarantino/SEMdeep/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/BarbaraTarantino/SEMdeep/actions)
-[![pkgdown site](https://img.shields.io/badge/docs-pkgdown-blue.svg)](https://barbaratarantino.github.io/SEMdeep/)
+**SEMdeep** train and validate a custom (or data-driven) structural equation
+    model (SEM) using deep neural networks (DNNs) or machine learning (ML)
+	algorithms. **SEMdeep** comes with the following functionalities:
 
----
+- Automated DNN or ML model training based on SEM network structures.
 
-<!--## Overview
+- Network plot representation as interpretation diagram.
 
-**SEMdeep: Structural Equation Modeling with Deep Neural Networks and Machine Learning**  
-Authors: **Barbara Tarantino**, **Mario Grassi**  
-Maintainer: *Barbara Tarantino (University of Pavia)*  
-CRAN: [**SEMdeep**](https://CRAN.R-project.org/package=SEMdeep) Mario Grassi [aut], Barbara Tarantino [cre]  
-Companion package: [**SEMgraph**](https://CRAN.R-project.org/package=SEMgraph) 	Mario Grassi [aut], Fernando Palluzzi [aut], Barbara Tarantino [cre]
--->
+- Model performance evaluation through regression and classification metrics.
 
-## Description
-
-**SEMdeep** provides an integrated framework to train, validate, and explain *Structural Equation Models (SEMs)* using **deep neural network (DNN)** and **machine learning (ML)** algorithms.  
-It combines the strengths of causal inference and predictive modeling to build interpretable systems that remain faithful to a given graph structure.
-
-The package is fully compatible with **[SEMgraph](https://CRAN.R-project.org/package=SEMgraph)**, which defines and manipulates causal graphs.  
-Together, the two packages form a dual modular system:
-
-- **SEMgraph**: linear SEM fitting, graph model search, and topological representation.  
-- **SEMdeep**: SEM-based DNN and ML fitting, model evaluation, and explainability.
-
----
-
-## Scientific Rationale and Added Value
-
-<img src="https://raw.githubusercontent.com/BarbaraTarantino/SEMdeep/main/man/figures/SEMdeep_slide1_overview.png" width="820"/>
-
-While most machine learning models achieve strong predictive performance, they often obscure the causal structure underlying the data.  
-**SEMdeep** extends the classical SEM paradigm by embedding ML and DNN algorithms directly within the causal graph, thus providing:
-
-- data-driven estimation aligned with prior causal structure;  
-- model interpretability through connection and gradient weights;  
-- interoperability with **SEMgraph** for graph construction and validation.
-
-This integration allows the user to move seamlessly from causal discovery to explainable predictive modeling.
-
----
-
-## Conceptual Workflow
-
-<img src="https://raw.githubusercontent.com/BarbaraTarantino/SEMdeep/main/man/figures/SEMdeep_slide2_workflow.png" width="850"/>
-
-The conceptual workflow follows a modular and interoperable design:
-
-1. **Data preprocessing** – sampling, scaling, and feature selection.  
-2. **Graph compilation** – conversion of DAGs or SEM specifications to adjacency matrices using `SEMgraph`.  
-3. **Model training** – graph-aligned machine learning or deep neural network fitting via `SEMml()` and `SEMdnn()`.  
-4. **Parameter optimization** – hyperparameter tuning and regularization across models.  
-5. **Model evaluation** – predictive accuracy and goodness-of-fit metrics.  
-6. **Model explanation** – quantitative and visual interpretation of causal effects.
-
-All preprocessing and graph compilation steps are handled by **SEMgraph**, while model training, optimization, and explainability modules are managed internally by **SEMdeep**.
-
----
-
-## Modeling Framework
-
-<img src="https://raw.githubusercontent.com/BarbaraTarantino/SEMdeep/main/man/figures/SEMdeep_slide3_algorithms.png" width="850"/>
-
----
-
-### **Input**
-
-**SEMdeep** operates on two main inputs:
-- A **data matrix**, containing observed or simulated variables.  
-- A **directed graph (adjacency matrix)** that encodes the hypothesized or data-driven causal relationships among variables.  
-
-These inputs define the structural dependencies that guide model compilation, training, and explanation.
-
----
-
-### **Modeling Strategies**
-
-#### **SEMml()**
-
-`SEMml()` performs *machine learning–based SEM fitting* through a **nodewise approach**.  
-Each node with incoming edges is modeled as a function of its direct parents, resulting in a set of independent predictive models aligned with the directed graph.  
-The algorithm supports four machine learning modes:
-
-| **Algorithm** | **Model Type** | **Description** | **Reference** |
-|----------------|----------------|-----------------|----------------|
-| **sem** | Linear SEM | Classical structural model using the `SEMrun()` function of SEMgraph. | Grassi, Palluzzi & Tarantino (2022) |
-| **tree** | CART | Decision-tree–based model using `rpart`, suitable for non-linear dependencies. | Breiman et al. (1984) |
-| **rf** | Random Forest | Ensemble tree model implemented via `ranger`, improving stability and variance reduction. | Breiman (2001) |
-| **xgb** | XGBoost | Gradient-boosted decision tree via `xgboost` optimized for high-dimensional data. | Chen & Guestrin (2016) |
-
-By mapping data onto the input graph, `SEMml()` creates a set of nodewise models based on directed causal links.  
-
----
-
-#### **SEMdnn()**
-
-`SEMdnn()` extends this logic to **deep neural networks (DNNs)**, supporting multiple graph-aware fitting strategies:
-
-| **Mode** | **Fitting Strategy** | **Description** | **Reference** |
-|-----------|----------------------|-----------------|----------------|
-| **Nodewise** | Equation-by-equation | Fits one neural model per dependent variable using its direct parent nodes as predictors, following the causal edge structure. | Zheng et al. (2020) |
-| **Layerwise** | Layer-by-layer | Trains sequential DNNs across graph layers, fitting each layer’s nodes as outputs of their upstream inputs. | Grassi & Tarantino (2025) |
-| **Structured** | Whole-graph (masked) | Builds a Structured Neural Network with weight matrices masked to match the graph adjacency. | Chen et al. (2023) |
-| **NeuralGraph** | Whole-graph (constrained) | Learns a Neural Graphical Model enforcing adjacency complement constraints for global causal consistency. | Shrivastava & Chajewska (2023) |
-
-Each network is trained using **torch**, enabling efficient backpropagation, and if available, GPU acceleration. 
-This design allows seamless transition from traditional SEMs to fully neural, graph-informed architectures.
-
----
-
-### **Output and Explainability**
-
-**SEMdeep** provides interpretable outputs through distinct explainability functions for both DNN and ML-based SEMs.
-
-#### **DNN-based Explainability**
-| **Function** | **Purpose** |
-|---------------|-------------|
-| `getConnectionWeight()` | Computes the connection weights between nodes, reflecting learned causal effects. |
-| `getGradientWeight()` | Evaluates sensitivity of output variables to perturbations in their causal inputs. |
-| `getSignificanceTest()` | Tests statistical relevance of approximate linear weights for each causal link. |
-
-#### **ML-based Explainability**
-| **Function** | **Purpose** |
-|---------------|-------------|
-| `getVariableImportance()` | Estimates predictor relevance for each ML nodewise model. |
-| `getShapleyR2()` | Quantifies contribution of each predictor via Shapley R² decomposition. |
-| `getLOCO()` | Computes “Leave-One-Covariate-Out” scores for feature impact evaluation. |
-
-These measures allow causal-effect visualization through color-coded graphs and node importance plots, bridging predictive and structural interpretability.
-In addition, if argument `boot != 0` in `SEMdnn()` and `SEMml()`, Lam’s (2002) *cheap bootstrapping* is applied to estimate 90% confidence intervals for DNN and ML parameters.
-
----
-
-## Integration and Applications
-
-<img src="https://raw.githubusercontent.com/BarbaraTarantino/SEMdeep/main/man/figures/SEMdeep_slide4_summary.png" width="800"/>
-
-| Principle | Description |
-|------------|-------------|
-| **Integration** | Combines SEM, ML, and DL within a unified framework. |
-| **Alignment** | Aligns model training with the causal topology of the input graph. |
-| **Explanation** | Produces quantitative and graphical interpretation of causal effects. |
-| **Application** | Suitable for biomedical, genomic, and multi-omics studies requiring causal insight. |
-
-Together, **SEMgraph** and **SEMdeep** provide a coherent workflow for *Causal AI*, connecting structural modeling with modern predictive algorithms.
-
----
+- Compute model variable importance for a DNN (connection weights, gradient
+  weights, or significance tests of network inputs) and for an ML (variable
+  importance measures, Shapley (R2) values, or LOCO values).
 
 ## Installation
 
-**SEMdeep** relies on the native R package **torch**, which supports CPU, GPU, and Apple Silicon acceleration — no Python required.
+**SEMdeep** uses the deep learning framework 'torch'. The **torch** package
+is native to R, so it's computationally efficient, as there is no need to install
+Python or any other API, and DNNs can be trained on CPU, GPU and MacOS GPUs.
+Before using 'SEMdeep' make sure that the current version of ‘torch’ is installed
+and running: 
 
-```r
-# Install dependencies
+``` r
 install.packages("torch")
-torch::install_torch()
 
-# Install SEMdeep (CRAN release)
-install.packages("SEMdeep")
+library(torch)
 
-# or latest development version
-remotes::install_github("BarbaraTarantino/SEMdeep")
+install_torch(reinstall = TRUE)
+
 ```
----
 
-## Documentation
+Only for windows (not Linux or Mac). Some Windows distributions don’t have the
+Visual C++ runtime pre-installed, download from
+[Microsoft](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170/)
+**VC_redist.x86.exe** (R32) or **VC_redist.x86.exe** (R64) and install it.
 
-Comprehensive documentation, tutorials, and examples are available at:  
-[https://barbaratarantino.github.io/SEMdeep/](https://barbaratarantino.github.io/SEMdeep/)
+For GPU setup, or if you have problems installing **torch** package, check out the
+[installation](https://torch.mlverse.org/docs/articles/installation.html/)
+help from the torch developer.
 
-Related package:  
-- **SEMgraph** — [CRAN](https://CRAN.R-project.org/package=SEMgraph) | [GitHub](https://github.com/BarbaraTarantino/SEMgraph)
+Then, the latest stable version can be installed from CRAN:
 
----
+``` r
+install.packages("SEMdeep")
+```
 
-## Future Developments
+The latest development version can be installed from GitHub:
 
-The next module under development is **SEMdgm()**. This extension will introduce **generative deep learning** architectures — including **Graph Autoencoders (GAE)**, **Variational Autoencoders (VAE)**, **Normalizing Flows (NF)** and **Generative Adversarial Networks (GAN)** — to approximate latent structures within complex systems for causal structure discovery.  
-The goal is to enable **causally informed representation learning** that enhances **predictive accuracy** while preserving consistency with the underlying causal graph.   
+``` r
+# install.packages("devtools")
+devtools::install_github("BarbaraTarantino/SEMdeep")
+```
 
-Stay tuned for updates in version **≥1.2.0**.
+## Getting help
 
----
-
-## References
-
-Grassi M., Palluzzi F., and Tarantino B. (2022). SEMgraph: An R Package for Causal Network Analysis of High-Throughput Data with Structural Equation Models. Bioinformatics, 38 (20), 4829–4830 https://doi.org/10.1093/bioinformatics/btac567
-
-Breiman L., Friedman J.H., Olshen R.A., and Stone, C.J. (1984). Classification and Regression Trees. Chapman and Hall/CRC. https://doi.org/10.1201/9781315139470 
-
-Breiman L. (2001). Random Forests, Machine Learning 45(1), 5-32. https://doi.org/10.1023/A:1010933404324
-
-Chen T., and Guestrin C. (2016). XGBoost: A Scalable Tree Boosting System. Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. https://doi.org/10.1145/2939672.2939785
-
-Zheng, X., Dan, C., Aragam, B., Ravikumar, P., Xing E. (2020). Learning sparse nonparametric dags. International conference on artificial intelligence and statistics, PMLR, 3414-3425. https://doi.org/10.48550/arXiv.1909.13189
-
-Grassi, M., Tarantino, B. (2025). SEMdag: Fast learning of Directed Acyclic Graphs via node or layer ordering. PLoS ONE 20(1): e0317283. https://doi.org/10.1371/journal.pone.0317283
-
-Chen A., Shi, R.I., Gao, X., Baptista, R., Krishnan, R.G. (2023). Structured neural networks for density estimation and causal inference. Advances in Neural Information Processing Systems, 36, 66438-66450. https://doi.org/10.48550/arXiv.2311.02221
-
-Shrivastava, H., Chajewska, U. (2023). Neural graphical models. In European Conference on Symbolic and Quantitative Approaches with Uncertainty (pp. 284-307). Cham: Springer Nature Switzerland. https://doi.org/10.48550/arXiv.2210.00453
-
-Lam, H. (2022). Cheap Bootstrap for Input Uncertainty Quantification. Winter Simulation Conference (WSC), Singapore, 2022, pp. 2318-2329. https://doi.org/10.1109/WSC57314.2022.10015362 
-
----
-
-## Contact
-
-**Barbara Tarantino**    
-Email: [barbara.tarantino00@gmail.com](mailto:barbara.tarantino00@gmail.com)  
-GitHub: [https://github.com/BarbaraTarantino](https://github.com/BarbaraTarantino)
+The full list of **SEMdeep** functions with examples is available at our website
+[**HERE**](https://BarbaraTarantino.github.io/SEMdeep/).

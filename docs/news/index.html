@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">SEMdeep</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,7 +33,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.1.0" id="version-110-release-notes">Version 1.1.0 Release Notes<a class="anchor" aria-label="anchor" href="#version-110-release-notes"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.1.0" id="version-110-release-notes">Version 1.1.0 Release Notes<a class="anchor" aria-label="anchor" href="#version-110-release-notes"></a></h2><p class="text-muted">CRAN release: 2025-11-10</p>
 <ul><li><p>All new and revised torch functions no longer require the “cito” package.</p></li>
 <li><p>Added new argument algo = c(“nodewise”,“layerwise”,“structured”,“neuralgraph”) to the SEMdnn() function. Four algorithms are now implemented using R MLPs (number of nodes with non-zero incoming connectivity) for “nodewise”, L&lt;R MLPs (number of layers in the input graph) for “layerwise”, and 1 MLP for “structured” or “neuralgraph”.</p></li>
 <li><p>Delete algo=“nn” and algo=“dnn” in the SEMml() function. These NNs for a small neural network model (1 hidden layer and 10 nodes) and large neural network model (1 hidden layers and 1000 nodes) run with algo=“nodewise” of the SEMdnn() function.</p></li>

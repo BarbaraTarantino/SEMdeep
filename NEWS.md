@@ -1,3 +1,11 @@
+## Version 1.1.1 Release Notes
+* Bugs in the SEMml() function were fixed to address the update of xboost v3.1.2.1. 
+
+* Added new function trainingReport(). Display a (r,c) panel history plot from SEMdnn()
+output, for each MLP model (if algo="nodewise or "layerwise") and bootstrap sample
+(if nboot > 0), in order to check the model's learning process.
+
+
 ## Version 1.1.0 Release Notes
 * All new and revised torch functions no longer require the "cito" package. 
 
