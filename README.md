@@ -2,6 +2,8 @@
 
 ## Overview
 
+![](figures/1_overview.png)
+
 SEMdeep provides an integrated framework to train, validate, and explain Structural Equation Models (SEMs) using deep neural network (DNN) and machine learning (ML) algorithms. It combines the strengths of causal inference and predictive modeling to build interpretable systems that remain faithful to a given graph structure.
 
 The package is fully compatible with SEMgraph, which defines and manipulates causal graphs. Together, the two packages form a dual modular system:
@@ -19,9 +21,9 @@ While most machine learning models achieve strong predictive performance, they o
 
 This integration allows the user to move seamlessly from causal discovery to explainable predictive modeling.
 
-![](figures/1_overview.png)
-
 ## Conceptual Workflow
+
+![](figures/2_workflow.png)
 
 The conceptual workflow follows a modular and interoperable design:
 
@@ -33,8 +35,6 @@ The conceptual workflow follows a modular and interoperable design:
 6. **Model explanation** – quantitative and visual interpretation of causal effects.
 
 All preprocessing and graph compilation steps are handled by SEMgraph, while model training, optimization, and explainability modules are managed internally by SEMdeep.
-
-![](figures/2_workflow.png)
 
 ## Modeling Framework
 
@@ -49,9 +49,25 @@ These inputs define the structural dependencies that guide model compilation, tr
 
 ### Modeling Strategies
 
+#### `SEMdnn()`
+
+`SEMdnn()` extends this logic to deep neural networks (DNNs), supporting multiple graph-aware fitting strategies:
+
+![](figures/3_algorithms.png)
+
+
+| Mode | Fitting Strategy | Description | Reference |
+|------|------------------|-------------|-----------|
+| Nodewise | Equation-by-equation | Fits one neural model per dependent variable using its direct parent nodes as predictors, following the causal edge structure. | Zheng et al. (2020) |
+| Layerwise | Layer-by-layer | Trains sequential DNNs across graph layers, fitting each layer’s nodes as outputs of their upstream inputs. | Grassi & Tarantino (2025) |
+| Structured | Whole-graph (masked) | Builds a Structured Neural Network with weight matrices masked to match the graph adjacency. | Chen et al. (2023) |
+| NeuralGraph | Whole-graph (constrained) | Learns a Neural Graphical Model enforcing adjacency complement constraints for global causal consistency. | Shrivastava & Chajewska (2023) |
+
+Each network is trained using `torch`, enabling efficient backpropagation, and if available, GPU acceleration. This design allows seamless transition from traditional SEMs to fully neural, graph-informed architectures.
+
 #### `SEMml()`
 
-`SEMml()` performs machine learning–based SEM fitting through a nodewise approach. Each node with incoming edges is modeled as a function of its direct parents, resulting in a set of independent predictive models aligned with the directed graph.
+`SEMml()` performs machine learning–based SEM fitting through a **nodewise** approach. Each node with incoming edges is modeled as a function of its direct parents, resulting in a set of independent predictive models aligned with the directed graph.
 
 The algorithm supports four machine learning modes:
 
@@ -63,21 +79,6 @@ The algorithm supports four machine learning modes:
 | `xgb` | XGBoost | Gradient-boosted decision tree via `xgboost` optimized for high-dimensional data. | Chen & Guestrin (2016) |
 
 By mapping data onto the input graph, `SEMml()` creates a set of nodewise models based on directed causal links.
-
-#### `SEMdnn()`
-
-`SEMdnn()` extends this logic to deep neural networks (DNNs), supporting multiple graph-aware fitting strategies:
-
-| Mode | Fitting Strategy | Description | Reference |
-|------|------------------|-------------|-----------|
-| Nodewise | Equation-by-equation | Fits one neural model per dependent variable using its direct parent nodes as predictors, following the causal edge structure. | Zheng et al. (2020) |
-| Layerwise | Layer-by-layer | Trains sequential DNNs across graph layers, fitting each layer’s nodes as outputs of their upstream inputs. | Grassi & Tarantino (2025) |
-| Structured | Whole-graph (masked) | Builds a Structured Neural Network with weight matrices masked to match the graph adjacency. | Chen et al. (2023) |
-| NeuralGraph | Whole-graph (constrained) | Learns a Neural Graphical Model enforcing adjacency complement constraints for global causal consistency. | Shrivastava & Chajewska (2023) |
-
-Each network is trained using `torch`, enabling efficient backpropagation, and if available, GPU acceleration. This design allows seamless transition from traditional SEMs to fully neural, graph-informed architectures.
-
-![](figures/3_algorithms.png)
 
 ## Output and Explainability
 
@@ -103,6 +104,8 @@ These measures allow causal-effect visualization through color-coded graphs and 
 
 ## Integration and Applications
 
+![](figures/4_summary.png)
+
 | Principle | Description |
 |-----------|-------------|
 | Integration | Combines SEM, ML, and DL within a unified framework. |
@@ -111,8 +114,6 @@ These measures allow causal-effect visualization through color-coded graphs and 
 | Application | Suitable for biomedical, genomic, and multi-omics studies requiring causal insight. |
 
 Together, SEMgraph and SEMdeep provide a coherent workflow for Causal AI, connecting structural modeling with modern predictive algorithms.
-
-![](figures/4_summary.png)
 
 ## Installation
 
