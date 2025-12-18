@@ -19,8 +19,11 @@ While most machine learning models achieve strong predictive performance, they o
 
 This integration allows the user to move seamlessly from causal discovery to explainable predictive modeling.
 
+<<<<<<< HEAD
 ![](figures/1_overview.png){width=95%}
 
+=======
+>>>>>>> f170d3b27cf7248266cb6bc472e9615d7a343c9a
 ## Conceptual Workflow
 
 The conceptual workflow follows a modular and interoperable design:
@@ -34,8 +37,11 @@ The conceptual workflow follows a modular and interoperable design:
 
 All preprocessing and graph compilation steps are handled by SEMgraph, while model training, optimization, and explainability modules are managed internally by SEMdeep.
 
+<<<<<<< HEAD
 ![](figures/2_workflow.png){width=95%}
 
+=======
+>>>>>>> f170d3b27cf7248266cb6bc472e9615d7a343c9a
 ## Modeling Framework
 
 ### Input
@@ -77,8 +83,11 @@ By mapping data onto the input graph, `SEMml()` creates a set of nodewise models
 
 Each network is trained using `torch`, enabling efficient backpropagation, and if available, GPU acceleration. This design allows seamless transition from traditional SEMs to fully neural, graph-informed architectures.
 
+<<<<<<< HEAD
 ![](figures/3_algorithms.png){width=95%}
 
+=======
+>>>>>>> f170d3b27cf7248266cb6bc472e9615d7a343c9a
 ## Output and Explainability
 
 SEMdeep provides interpretable outputs through distinct explainability functions for both DNN and ML-based SEMs.
@@ -111,8 +120,11 @@ These measures allow causal-effect visualization through color-coded graphs and 
 | Application | Suitable for biomedical, genomic, and multi-omics studies requiring causal insight. |
 
 Together, SEMgraph and SEMdeep provide a coherent workflow for Causal AI, connecting structural modeling with modern predictive algorithms.
+<<<<<<< HEAD
 
 ![](figures/4_summary.png){width=95%}
+=======
+>>>>>>> f170d3b27cf7248266cb6bc472e9615d7a343c9a
 
 ## Installation
 
@@ -144,8 +156,18 @@ Comprehensive documentation, tutorials, and examples are available [HERE](https:
 
 # Future Developments
 
+<<<<<<< HEAD
 The next module under development is **SEMdgm()** function. This extension will introduce generative deep learning architectures, including:
 *Graph Autoencoders* (GAE), *Variational Autoencoders* (VAE), *Normalizing Flows* (NF), and *Generative Adversarial Networks* (GAN),
+=======
+The next module under development is **`SEMdgm()`**. This extension will introduce generative deep learning architectures, including:
+
+- Graph Autoencoders (GAE)
+- Variational Autoencoders (VAE)
+- Normalizing Flows (NF)
+- Generative Adversarial Networks (GAN)
+
+>>>>>>> f170d3b27cf7248266cb6bc472e9615d7a343c9a
 to approximate latent structures within complex systems for causal structure discovery.
 
 The goal is to enable causally informed representation learning that enhances predictive accuracy while preserving consistency with the underlying causal graph.
