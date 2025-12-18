@@ -145,11 +145,10 @@ Comprehensive documentation, tutorials, and examples are available [HERE](https:
 
 # Future Developments
 
-The next module under development is **SEMdgm()** function. This extension will introduce generative deep learning architectures, including:
+The next module under development is **SEMdgm()** function. This extension will introduce deep generative modeling (DGM) architectures, including:
 *Graph Autoencoders* (GAE), *Variational Autoencoders* (VAE), *Normalizing Flows* (NF), and *Generative Adversarial Networks* (GAN),
-to approximate latent structures within complex systems for causal structure discovery.
-
-The goal is to enable causally informed representation learning that enhances predictive accuracy while preserving consistency with the underlying causal graph.
+to approximate latent structures within complex systems for causal structure discovery. The goal is to enable causally informed representation
+learning that enhances predictive accuracy while preserving consistency with the underlying causal graph.
 
 Stay tuned for updates to version **1.2.0** and higher.
 
